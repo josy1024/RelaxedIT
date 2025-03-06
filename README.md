@@ -8,4 +8,7 @@ RelaxedIT powershell module
 
 ```powershell
 New-ModuleManifest -path .\RelayedIT.psd1 -Author "Josef Lahmer" -Description "relaxed IT client management scripts" -RootModule RelayedIT -ModuleVersion 0.0.1 -PassThru
+
+Publish-module -path . -Repositroy "PSGallery" -Nugetapikey = "$key" 
+
 ```
