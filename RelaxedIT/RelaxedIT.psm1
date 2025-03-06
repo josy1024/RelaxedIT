@@ -1,7 +1,7 @@
 
 function Test-RelaxedIT
 {
-    write-host Get-ColorText("[Test]-""RelaxedIT.module"" - optimized for pwsh7 :-)")
+    write-host (Get-ColorText("[Test] ""RelaxedIT.module"" - optimized for pwsh7 :-)"))
 }
 
 function Get-ColorText {
@@ -61,4 +61,66 @@ function Get-ColorText {
 
     # Output the colored text
     return $text
+}
+
+function Get-ConfigfromJSON {
+    <#
+    .SYNOPSIS
+        json array config file
+    .DESCRIPTION
+        use a json config file
+    .NOTES
+        Information or caveats about the function e.g. 'This function is not supported in Linux'
+    .LINK
+        Specify a URI to a help page, this will show when Get-Help -Online is used.
+    .EXAMPLE
+        # $config = Get-ConfigfromJSON -match "2" -config .\mandant.json
+        # $config.ConfigValue    
+    #>
+    param (
+        [String]$config="config.json",
+        [String]$id="id",
+        [String]$match=""
+    )
+
+    # Read the JSON file
+    $jsonobj = Get-Content -Path $config | ConvertFrom-Json
+
+    # Find the object with the matching "anbieternr"
+    if ($match -ne "")
+    {
+        $result = $jsonobj | Where-Object { $_.($id) -eq $match }
+    }
+    else {
+        $result = $jsonobj
+    }
+
+    if ($result) {
+        return $result
+    } else {
+        Write-customLOG -logtext ("No configuration found for $id : $match")
+    }
+}
+
+function Write-customLOG
+{
+    [string]$logtext = ""
+
+    write-host (Get-LogDateString) + " " + (Get-ColorText($logtext))
+}
+
+Function Get-LogDateString 
+{
+	[CmdletBinding()]
+	param (
+		[Parameter()]
+		[datetime] $date = [datetime]::UtcNow
+	)
+	<#
+	.SYNOPSIS
+		#GET-LogDateString #get-date
+	.DESCRIPTION
+		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
+	#>
+	return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
 }

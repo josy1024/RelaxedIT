@@ -11,4 +11,5 @@ $parameters = @{
     ReleaseNote = 'relaxed IT client management scripts'
 }
 
+$module = "RelaxedIT"
 # Publish-Module @parameters
