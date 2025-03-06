@@ -1,7 +1,7 @@
 
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText("[Test] ""RelaxedIT.module"" - optimized for pwsh7 :-)"))
+    write-host (Get-ColorText("[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.9 :-)"))
 }
 
 function Get-ColorText {
@@ -104,9 +104,8 @@ function Get-ConfigfromJSON {
 
 function Write-customLOG
 {
-    [string]$logtext = ""
-
-    write-host (Get-LogDateString) + " " + (Get-ColorText($logtext))
+    [string]$logtext
+    write-host ("" + (Get-LogDateString) + " " + (Get-ColorText -text $logtext))
 }
 
 Function Get-LogDateString 

@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.7"
+    $nextversion="0.0.9"
 )
 function Get-NextFixVersion {
     param (
@@ -22,6 +22,30 @@ function Get-NextFixVersion {
     return $newVersion
 }
 
+function Update-VersionInScript {
+    param (
+        [string]$currentVersion,
+        [string]$filePath = $MyInvocation.MyCommand.Path
+    )
+
+
+    $nextbuildversion = Get-NextFixVersion -version $currentVersion
+
+    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""($currentScriptPath)""")
+
+    # Read the content of the file
+    $fileContent = Get-Content -Path $filePath
+
+    # Update the line containing the version number
+    $fileContent = $fileContent -replace "$currentVersion", "$nextVersion"
+
+    # Write the updated content back to the file
+    Set-Content -Path $filePath -Value $fileContent
+
+    Write-customLOG -LogText "Version updated from $currentVersion to $nextVersion in ""$filePath"""
+}
+
+
 . .\vars.ps1
 
 Update-ModuleManifest -path ./$module/$module.psd1 -FunctionsToExport Test-$module, Get-ColorText, Get-ConfigfromJSON, Write-customLOG
@@ -32,18 +56,15 @@ Test-Modulemanifest -path ./$module/$module.psd1
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
 
-$nextbuildversion = Get-NextFixVersion -version $nextversion
-$currentScriptPath = $MyInvocation.MyCommand.Path
+Update-ModuleManifest -Path ./src/$module.EnergySaver/$module.EnergySaver.psd1 -ModuleVersion $nextversion
+Test-Modulemanifest -path ./src/$module.EnergySaver/$module.EnergySaver.psd1 
+Publish-module -path ./src/$module.EnergySaver/ -Repository "PSGallery" -Nugetapikey $key
 
-Write-Host "Prepare Next: $nextbuildversion ($currentScriptPath)"
 
-$fileContent = Get-Content -Path $currentScriptPath
 
-# Update the line containing the version number
-$fileContent = $fileContent -replace "$nextversion","$nextbuildversion"
+Update-VersionInScript -currentVersion $nextversion -filePath  $MyInvocation.MyCommand.Path
 
-# Write the updated content back to the file
-Set-Content -Path $currentScriptPath -Value $fileContent
+Update-VersionInScript -currentVersion $nextversion -filePath ".\RelaxedIT\RelaxedIT.psm1"
 
 Start-Sleep -Seconds 5
 
