@@ -3,6 +3,14 @@ function RelaxedIT.EnergySaver.Run {
         [int]$interval = 300,
         [string]$config = "C:\ProgramData\RelaxedIT\EnergySaver.json"
     )
+   
+    
+    if (!(test-path -path $config ))
+    {   $base = (Get-Module RelaxedIT.EnergySaver).ModuleBase
+        copy-item -Path (join-path $base "EnergySaver.json") -Destination $config
+        Write-customLOG "[Initial]: copy default config: ""$config"""
+    }
+
     $processnames = (Get-ConfigfromJSON -config $config).id
 
 while ($true) {
@@ -16,7 +24,7 @@ while ($true) {
         # Disable sleep mode
         powercfg -change -standby-timeout-ac 0
         powercfg -change -monitor-timeout-ac 10
-        Write-customLOG -logtext $anyrunning.ProcessName -join ";"
+        Write-customLOG -logtext ($anyrunning.ProcessName -join ";")
         Write-customLOG -logtext "is running. Sleep mode disabled."
     } else {
         $host.ui.RawUI.WindowTitle = "EnergyTimeout 20 Min"
@@ -31,4 +39,10 @@ while ($true) {
 }
 
 }
+
+
+# function RelaxedIT.EnergySaver.CreateTask
+# {
+#     Register-ScheduledTask -Xml EnergySaver.xml -TaskName "RelaxedIT.EnergySaver.Run" -TaskPath "RelaxedIT"
+# }
 

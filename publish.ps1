@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.10"
+    $nextversion="0.0.13"
 )
 function Get-NextFixVersion {
     param (
@@ -56,10 +56,14 @@ Test-Modulemanifest -path ./$module/$module.psd1
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
 
-Update-ModuleManifest -Path ./src/$module.EnergySaver/$module.EnergySaver.psd1 -ModuleVersion $nextversion
-Test-Modulemanifest -path ./src/$module.EnergySaver/$module.EnergySaver.psd1 
-Publish-module -path ./src/$module.EnergySaver/ -Repository "PSGallery" -Nugetapikey $key
 
+$submodules = "EnergySaver"
+foreach ($submodule in $submodules) {
+    Write-customLOG -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
+    Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
+    Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
+    Publish-module -path ./src/$module.$submodule/ -Repository "PSGallery" -Nugetapikey $key
+}
 
 
 Update-VersionInScript -currentVersion $nextversion -filePath  $MyInvocation.MyCommand.Path

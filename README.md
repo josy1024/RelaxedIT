@@ -6,7 +6,11 @@ RelaxedIT powershell module
 
 ## Install
 
-* Install-module RelaxedIT
+```powershell
+Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
+
+Install-Module RelaxedIT.EnergySaver -Force -Scope AllUsers -AllowClobber
+```
 
 ## Module Management
 
