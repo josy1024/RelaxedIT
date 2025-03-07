@@ -57,7 +57,8 @@ $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
 
 
-$submodules = "EnergySaver"
+$submodules = @("EnergySaver", "Update"
+
 foreach ($submodule in $submodules) {
     Write-customLOG -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
