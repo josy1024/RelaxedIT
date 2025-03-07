@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.13"
+    $nextversion="0.0.15"
 )
 function Get-NextFixVersion {
     param (
@@ -45,6 +45,12 @@ function Update-VersionInScript {
     Write-customLOG -LogText "Version updated from $currentVersion to $nextVersion in ""$filePath"""
 }
 
+# fix publish errors:
+<#
+Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.exe -OutFile "$env:LOCALAPPDATA\Microsoft\Windows\PowerShell\PowerShellGet\NuGet.exe"
+Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+Install-PackageProvider -Name PowerShellGet -Force -Scope CurrentUser
+#>
 
 . .\vars.ps1
 
