@@ -1,9 +1,10 @@
-
+﻿
 [CmdletBinding()]
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.15"
+    $nextversion="0.0.17",
+    [int]$publish=99
 )
 function Get-NextFixVersion {
     param (
@@ -22,6 +23,16 @@ function Get-NextFixVersion {
     return $newVersion
 }
 
+function Get-AllFunctions {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$path
+    )
+
+    return Get-Content -Path $path | Select-String -Pattern "^function " | ForEach-Object {
+        $_.Line -replace "function ", "" -replace "\{.*", ""
+    }
+}
 function Update-VersionInScript {
     param (
         [string]$currentVersion,
@@ -31,7 +42,7 @@ function Update-VersionInScript {
 
     $nextbuildversion = Get-NextFixVersion -version $currentVersion
 
-    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""($currentScriptPath)""")
+    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""$filePath""($currentVersion)")
 
     # Read the content of the file
     $fileContent = Get-Content -Path $filePath
@@ -40,7 +51,7 @@ function Update-VersionInScript {
     $fileContent = $fileContent -replace "$currentVersion", "$nextVersion"
 
     # Write the updated content back to the file
-    Set-Content -Path $filePath -Value $fileContent
+    Set-Content -Path $filePath -Value $fileContent  -Encoding utf8BOM
 
     Write-customLOG -LogText "Version updated from $currentVersion to $nextVersion in ""$filePath"""
 }
@@ -54,29 +65,42 @@ Install-PackageProvider -Name PowerShellGet -Force -Scope CurrentUser
 
 . .\vars.ps1
 
-Update-ModuleManifest -path ./$module/$module.psd1 -FunctionsToExport Test-$module, Get-ColorText, Get-ConfigfromJSON, Write-customLOG
+$functionsToExport = Get-AllFunctions -path "./$module/$module.psm1"
+Update-ModuleManifest -Path ./$module/$module.psd1 -FunctionsToExport $functionsToExport
 Update-ModuleManifest -Path ./$module/$module.psd1 -ModuleVersion $nextversion
 
 Test-Modulemanifest -path ./$module/$module.psd1  
 
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
-Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
+$env:NUGET_CLI_LANGUAGE = "en-US"
+
+if ($publish -eq 1 -or $publish -eq 99) {
+    
+    Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
+}
 
 
 $submodules = @("EnergySaver", "Update")
 
 foreach ($submodule in $submodules) {
     Write-customLOG -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
+    $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"    
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
+    Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -FunctionsToExport $functionsToExport
     Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
-    Publish-module -path ./src/$module.$submodule/ -Repository "PSGallery" -Nugetapikey $key
+
+    if ($publish -ge 2 -or $publish -eq 99) {
+        Publish-module -path ./src/$module.$submodule/ -Repository "PSGallery" -Nugetapikey $key
+    }
 }
 
 
-Update-VersionInScript -currentVersion $nextversion -filePath  $MyInvocation.MyCommand.Path
+if ($publish -ge 1) {
+    Update-VersionInScript -currentVersion $nextversion -filePath  $MyInvocation.MyCommand.Path
+    Update-VersionInScript -currentVersion $nextversion -filePath ".\RelaxedIT\RelaxedIT.psm1"
+    Start-Sleep -Seconds 5
+}
 
-Update-VersionInScript -currentVersion $nextversion -filePath ".\RelaxedIT\RelaxedIT.psm1"
+$findmodule  = Find-Module -Name $module
+Write-customLOG -LogText "Find_module Check ONLINE: ""$($findmodule.Name)"" [$($findmodule.Version)]"
 
-Start-Sleep -Seconds 5
-
-Find-Module -Name $module

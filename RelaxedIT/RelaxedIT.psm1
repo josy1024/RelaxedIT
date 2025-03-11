@@ -1,4 +1,4 @@
-
+﻿
 function Test-RelaxedIT
 {
     write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.10 :-)")
@@ -16,7 +16,7 @@ function Get-ColorText {
     The input text to be color formatted.
 
     .EXAMPLE
-    $sampleText = "01/03/2025 [INF] This is a null ""sample text"" dbNull @varname with a date 2023-03-04 18:15 (komment) and a number 123. bollean true and false "
+    $sampleText = "01/03/2025 [ERR][INF][Bracket] This is a null ""sample text"" dbNull @varname with a date 2023-03-04 18:15 (komment) and a number 123. bollean true and false "
     Get-ColorText -text $sampleText
 
     .NOTES
@@ -39,6 +39,8 @@ function Get-ColorText {
     $darkGrayPattern = '\(.*?\)'
     $BracketPattern = '\[.*?\]'
     $bluePattern = '(?i)\b(true|false|null|DBNull)\b'
+    $redPattern = '\b\!\b' # red match !
+    $keywordPattern = '\b(BUG|ERR|WARN|WRN|INF|DEBUG|TRACE|TODO)\b'
 
 
     # Replace patterns with colored text
@@ -52,7 +54,9 @@ function Get-ColorText {
         $text = [regex]::Replace($text, $digitPattern, {param($match) "`e[35m$($match.Value)`e[0m"})  # DarkMagenta
         $text = [regex]::Replace($text, $varPattern, {param($match) "`e[93m$($match.Value)`e[0m"}) # @variablename
         $text = [regex]::Replace($text, $quotePattern, {param($match) "`e[96m$($match.Value)`e[0m"})  # Cyan
-        $text = [regex]::Replace($text, $bluePattern, {param($match) "`e[34m$($match.Value)`e[0m"})  # blue
+        $text = [regex]::Replace($text, $bluePattern, {param($match) "`e[34m$($match.Value)`e[0m"})  # blue 
+        $text = [regex]::Replace($text, $redPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
+        $text = [regex]::Replace($text, $keywordPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
         
     }
     catch {
@@ -106,9 +110,27 @@ function Write-customLOG
 {   [CmdletBinding()]
     param (
         [Parameter()]
-        [string]$logtext
+        [string]$logtext,
+        [string]$logpath="c:\temp\ps"
     )
     write-host ("" + (Get-LogDateString) + " " + (Get-ColorText -text $logtext))
+
+    # Überprüfen der Umgebungsvariable "relaxedlog"
+    $logPath = Get-EnvVar -name "relaxedlog"
+
+    if ($logPath -ne "nolog") {
+
+        if (-not $logPath) {
+            $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateString) + ".log"
+            if (-not (Test-Path $logpath)) {
+                New-Item -Path $logpath -ItemType Directory
+            }
+            $logPath = "$logpath\$psscript.log"
+        }
+
+        # Logtext in die Datei schreiben
+        Add-Content -Path $logPath -Value ("" + (Get-LogDateString) + " " + $logtext) 
+    }
 }
 
 Function Get-LogDateString 
@@ -125,4 +147,23 @@ Function Get-LogDateString
 		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
 	#>
 	return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
+}
+
+function Get-EnvVar {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$name
+    )
+    return [System.Environment]::GetEnvironmentVariable($name)
+}
+
+# Funktion zum Setzen einer Umgebungsvariablen
+function Set-EnvVar {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$name,
+        [Parameter(Mandatory = $true)]
+        [string]$value
+    )
+    [System.Environment]::SetEnvironmentVariable($name, $value)
 }

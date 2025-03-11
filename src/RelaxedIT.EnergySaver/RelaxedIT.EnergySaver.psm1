@@ -44,5 +44,7 @@ while ($true) {
 # function RelaxedIT.EnergySaver.CreateTask
 # {
 #     Register-ScheduledTask -Xml EnergySaver.xml -TaskName "RelaxedIT.EnergySaver.Run" -TaskPath "RelaxedIT"
+# } 
+# pwsh.exe -windowstyle Minimized -command "RelaxedIT.EnergySaver.Run"
 # }
 
