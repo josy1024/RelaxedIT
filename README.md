@@ -4,15 +4,16 @@ RelaxedIT powershell module
 
 * [Changelog](CHANGELOG.md)
 
-## Install
+## Install (ADMIN)
 
 ```powershell
 Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
-
 Install-Module RelaxedIT.EnergySaver -Force -Scope AllUsers -AllowClobber
 ```
+* Published to PowershellGallery: https://www.powershellgallery.com/packages?q=relaxedIT
 
-## Module Management
+
+## Module Management (DEV)
 
 ```powershell
 . .\vars.ps1
