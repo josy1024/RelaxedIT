@@ -44,3 +44,14 @@ write-output "# $module.$submodule" | out-file -path  ./src/$module.$submodule/$
 Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
 
 ```
+
+## TESTING
+
+```
+# TODO://in publish einbauen
+# Get all functions in the module
+$Functions = Get-Command -Module YourModule | Where-Object { $_.CommandType -eq 'Function' } | Select-Object -ExpandProperty Name
+
+# Update the module manifest
+Update-ModuleManifest -Path $ModuleManifestPath -FunctionsToExport $Functions
+```
