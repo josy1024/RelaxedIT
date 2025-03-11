@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.0.17] - 2025-03-11
+## [0.0.21] - 2025-03-11
 
+- v0.0.21 Fix: Update-RelaxedITModuleAndRemoveOld
+- v0.0.20 Fix: Version Numbering, Update
 - v0.0.17 Initial Release for RelaxedIT.Update.All
 
 ## [0.0.12] - 2025-03-07

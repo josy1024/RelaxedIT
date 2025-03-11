@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.17",
+    $nextversion="0.0.22",
     [int]$publish=99
 )
 function Get-NextFixVersion {
@@ -42,18 +42,23 @@ function Update-VersionInScript {
 
     $nextbuildversion = Get-NextFixVersion -version $currentVersion
 
-    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""$filePath""($currentVersion)")
+    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""$filePath"" ($currentVersion)")
 
-    # Read the content of the file
-    $fileContent = Get-Content -Path $filePath
+    if (test-path -path $filePath) {
+        # Read the content of the file
+        $fileContent = Get-Content -Path $filePath
 
-    # Update the line containing the version number
-    $fileContent = $fileContent -replace "$currentVersion", "$nextVersion"
+        # Update the line containing the version number
+        $fileContent = $fileContent -replace "$currentVersion", "$nextbuildversion"
 
-    # Write the updated content back to the file
-    Set-Content -Path $filePath -Value $fileContent  -Encoding utf8BOM
+        # Write the updated content back to the file
+        Set-Content -Path $filePath -Value $fileContent  -Encoding utf8BOM
 
-    Write-customLOG -LogText "Version updated from $currentVersion to $nextVersion in ""$filePath"""
+        Write-customLOG -LogText "Version updated from $currentVersion to $nextbuildversion in ""$filePath"""
+    }
+    else {
+        Write-customLOG -LogText "[ERR] in Update-VersionInScript: File not found: ""$filePath"""
+    }
 }
 
 # fix publish errors:
@@ -87,6 +92,8 @@ foreach ($submodule in $submodules) {
     $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"    
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -FunctionsToExport $functionsToExport
+    Update-VersionInScript -currentVersion $nextversion -filePath "./src/$module.$submodule/$module.$submodule.psm1" 
+
     Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
 
     if ($publish -ge 2 -or $publish -eq 99) {
@@ -102,5 +109,5 @@ if ($publish -ge 1) {
 }
 
 $findmodule  = Find-Module -Name $module
-Write-customLOG -LogText "Find_module Check ONLINE: ""$($findmodule.Name)"" [$($findmodule.Version)]"
+Write-customLOG -LogText "Find_module Check ONLINE: ""$($findmodule.Name)"" ($($findmodule.Version))"
 

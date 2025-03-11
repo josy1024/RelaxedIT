@@ -2,6 +2,7 @@
 function Test-RelaxedIT
 {
     write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.10 :-)")
+    
 }
 
 function Get-ColorText {
@@ -111,25 +112,40 @@ function Write-customLOG
     param (
         [Parameter()]
         [string]$logtext,
-        [string]$logpath="c:\temp\ps"
+        [string]$logfilepath="c:\temp\ps\default"
     )
     write-host ("" + (Get-LogDateString) + " " + (Get-ColorText -text $logtext))
 
     # Überprüfen der Umgebungsvariable "relaxedlog"
-    $logPath = Get-EnvVar -name "relaxedlog"
+    $relaxedlog = Get-EnvVar -name "relaxedlog"
 
-    if ($logPath -ne "nolog") {
+    if (!('' -eq $relaxedlog)) {
+        $logfilepath = $relaxedlog
+    }
 
+    # Get the base directory of the file path
+    $baseDirectory = Split-Path -Path $logfilepath
+
+    # Create the base directory if it doesn't exist
+    if (-not (Test-Path -Path $baseDirectory)) {
+    New-Item -ItemType Directory -Path $baseDirectory -Force | Out-Null
+    #Write-Host "Base directory created: $baseDirectory"
+    } else {
+    #Write-Host "Base directory already exists: $baseDirectory"
+    }
+    if ($relaxedlog -ne "nolog") {
+
+        if (-not (Test-Path $logpathbase)) {
+            New-Item -Path $logpathbase -ItemType Directory
+        }
         if (-not $logPath) {
             $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateString) + ".log"
-            if (-not (Test-Path $logpath)) {
-                New-Item -Path $logpath -ItemType Directory
-            }
-            $logPath = "$logpath\$psscript.log"
+          
+            $logPath = "$logfilepath\$psscript.log"
         }
 
         # Logtext in die Datei schreiben
-        Add-Content -Path $logPath -Value ("" + (Get-LogDateString) + " " + $logtext) 
+        Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext) 
     }
 }
 
