@@ -112,38 +112,28 @@ function Write-customLOG
     param (
         [Parameter()]
         [string]$logtext,
-        [string]$logfilepath="c:\temp\ps\default"
+        [string]$logfilepath="c:\temp\ps\default.log"
     )
     write-host ("" + (Get-LogDateString) + " " + (Get-ColorText -text $logtext))
 
     # Überprüfen der Umgebungsvariable "relaxedlog"
     $relaxedlog = Get-EnvVar -name "relaxedlog"
 
-    if (!('' -eq $relaxedlog)) {
-        $logfilepath = $relaxedlog
+    if (-not $relaxedlog) {
+
+        $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateString) + ".log"
+        # logPath = "$logfilepath\$psscript.log"
+        $logfilepath = $logfilepath -replace "default.log",  $psscript
+        Set-EnvVar -name "relaxedlog" -value $logfilepath
+        $baseDirectory = Split-Path -Path $logfilepath    
+
+        if (-not (Test-Path -Path $baseDirectory)) {
+            New-Item -ItemType Directory -Path $baseDirectory -Force | Out-Null
+            Write-Host "Base directory created: $baseDirectory"
+        } 
     }
 
-    # Get the base directory of the file path
-    $baseDirectory = Split-Path -Path $logfilepath
-
-    # Create the base directory if it doesn't exist
-    if (-not (Test-Path -Path $baseDirectory)) {
-    New-Item -ItemType Directory -Path $baseDirectory -Force | Out-Null
-    #Write-Host "Base directory created: $baseDirectory"
-    } else {
-    #Write-Host "Base directory already exists: $baseDirectory"
-    }
     if ($relaxedlog -ne "nolog") {
-
-        if (-not (Test-Path $logpathbase)) {
-            New-Item -Path $logpathbase -ItemType Directory
-        }
-        if (-not $logPath) {
-            $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateString) + ".log"
-          
-            $logPath = "$logfilepath\$psscript.log"
-        }
-
         # Logtext in die Datei schreiben
         Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext) 
     }
