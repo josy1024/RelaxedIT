@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.10 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.26 :-)")
     
 }
 
@@ -121,7 +121,7 @@ function Write-customLOG
 
     if (-not $relaxedlog) {
 
-        $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateString) + ".log"
+        $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateFileString) + ".log"
         # logPath = "$logfilepath\$psscript.log"
         $logfilepath = $logfilepath -replace "default.log",  $psscript
         Set-EnvVar -name "relaxedlog" -value $logfilepath
@@ -135,7 +135,13 @@ function Write-customLOG
 
     if ($relaxedlog -ne "nolog") {
         # Logtext in die Datei schreiben
-        Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext) 
+        try {
+            Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext) 
+        }
+        catch {
+            $errortext = "[ERR]: `$logfilepath = ""$logfilepath"", `$relaxedlog = ""$relaxedlog"", `$baseDirectory = ""$baseDirectory"""
+            write-host (Get-ColorText -text $errortext)
+        }
     }
 }
 
@@ -153,6 +159,23 @@ Function Get-LogDateString
 		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
 	#>
 	return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
+}
+
+
+Function Get-LogDateFileString 
+{
+	[CmdletBinding()]
+	param (
+		[Parameter()]
+		[datetime] $date = [datetime]::UtcNow
+	)
+	<#
+	.SYNOPSIS
+		#GET-LogDateString #get-date
+	.DESCRIPTION
+		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
+	#>
+	return ([datetime]::UtcNow).toString("yyyy-MM-dd___HHmm_ss_U\tc")
 }
 
 function Get-EnvVar {

@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-customLOG -logtext "Test-RelaxedIT.Update v0.0.20"
+    Write-customLOG -logtext "Test-RelaxedIT.Update v0.0.26"
 }
 
 function RelaxedIT.Update.All {
@@ -26,7 +26,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
     )
 
     foreach ($ModuleName in $ModuleNames) {
-        Write-customLOG -logtext "Updating module: $ModuleName" 
+        Write-customLOG -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName""" 
         
         # Install or update the module
         Install-Module -Name $ModuleName -Force -Scope AllUsers -AllowClobber
@@ -36,7 +36,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
 
         # Remove older versions, if any
         Get-InstalledModule -Name $ModuleName -AllVersions | Where-Object { $_.Version -ne $LatestVersion } | ForEach-Object {
-            Write-customLOG -logtext  "Removing old version: $($_.Version) of module $ModuleName"
+            Write-customLOG -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
     }
