@@ -16,7 +16,7 @@ function RelaxedIT.Update.All {
     #Fallback to install and update
     Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update")
 
-    Write-customLOG -logtext "RelaxedIT.Update.All"
+    Write-customLOG -logtext "RelaxedIT.Update.All DONE"
 }
 
 
@@ -40,6 +40,4 @@ Function Update-RelaxedITModuleAndRemoveOld {
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
     }
-
-    Write-Host "Update and cleanup complete!" -ForegroundColor
 }

@@ -24,15 +24,35 @@ function Get-NextFixVersion {
 }
 
 function Get-AllFunctions {
+	<#
+.SYNOPSIS
+    Retrieves the names of all functions defined in a specified script file.
+
+.DESCRIPTION
+    The Get-AllFunctions function reads a script file and extracts the names of all functions defined within it.
+    It searches for lines that start with the keyword 'function' and returns the function names.
+
+.PARAMETER path
+    Specifies the path to the script file. This parameter is mandatory.
+
+.EXAMPLE
+	$module="guglerPFModule"
+	$module="guglerModule"
+	$functs = Get-AllFunctions -path "$module.psm1"
+	Update-ModuleManifest -Path "$module.psd1" -FunctionsToExport $functs
+    This command retrieves the names of all functions defined in the script file located at C:\Scripts\MyScript.ps1.
+
+	#>
     param (
         [Parameter(Mandatory = $true)]
         [string]$path
     )
 
     return Get-Content -Path $path | Select-String -Pattern "^function " | ForEach-Object {
-        $_.Line -replace "function ", "" -replace "\{.*", ""
+        $_.Line -replace "function ", ""  -replace "\{.*", "" -replace "\(.*", "" -replace " ", ""
     }
 }
+
 function Update-VersionInScript {
     param (
         [string]$currentVersion,
