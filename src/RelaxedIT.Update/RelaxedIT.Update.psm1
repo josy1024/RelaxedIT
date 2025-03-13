@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.29"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.30"
 }
 
 function RelaxedIT.Update.All {
@@ -25,6 +25,89 @@ function RelaxedIT.Update.All {
 
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
+
+function RelaxedIT.Update.Task {
+    param (
+        [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
+    )
+
+    # Ensure the folder exists
+    $folderPath = Split-Path $LastrunTime
+    if (-not (Test-Path $folderPath)) {
+        New-Item -ItemType Directory -Path $folderPath -Force
+    }
+
+    # Check if the file exists
+    if (Test-Path $LastrunTime) {
+        # Read the last run time from the file
+        $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
+        $lastRunTimestamp = Get-Date $lastRunData.LastRun
+
+        # Check if more than 7 days have passed
+        $daysSinceLastRun = (Get-Date) - $lastRunTimestamp
+        if ($daysSinceLastRun.TotalDays -le 7) {
+            Write-RelaxedIT "Task was executed less than 7 days ago. Skipping."
+            return
+        }
+    } else {
+        Write-RelaxedIT "Timestamp file not found. Task will run for the first time."
+    }
+
+    # Run the RelaxedIT.Update.All command
+    RelaxedIT.Update.All
+
+    # Update the timestamp
+    $timestampData = @{
+        LastRun = (Get-Date).ToString("o") # ISO 8601 format
+    } | ConvertTo-Json -Depth 1
+    $timestampData | Set-Content -Path $LastrunTime -Force
+
+    Write-RelaxedIT "Task completed and timestamp updated."
+
+}
+
+function RelaxedIT.Update.Task.Install {
+
+    # Define the scheduled task name
+    $taskBaseName = "RelaxedIT Update Task"
+    $taskName = "RelaxedIT\$taskBaseName"
+
+    # Check if the task already exists and remove it
+
+    if (Get-ScheduledTask -TaskName $taskBaseName -ErrorAction SilentlyContinue) {
+        Write-RelaxedIT "Task '$taskName' already exists. Removing it..."
+        Get-ScheduledTask -TaskName $taskBaseName | Unregister-ScheduledTask -Confirm:$false
+        Write-RelaxedIT "Task '$taskName' has been removed."
+    }
+
+    $taskDescription = "Runs the RelaxedIT.Update.Task PowerShell command"
+    $taskCommand = "pwsh.exe"
+    $taskArguments = "-NoProfile -ExecutionPolicy Bypass -Command RelaxedIT.Update.Task"
+    $taskTriggerTime = "00:20PM"  # Example: Set to run at 3:00 AM
+    
+    # Create a daily trigger
+    $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date $taskTriggerTime)
+    
+    # Create a reboot trigger with a random delay of up to 1 hour
+    $rebootTrigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Minutes 60)
+
+    # Create an action to run the PowerShell command
+    $action = New-ScheduledTaskAction -Execute $taskCommand -Argument $taskArguments
+    
+    # (Optional) Set up the task to run with highest privileges (admin rights)
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+        -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd `
+        -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 1)
+    
+    # Register the scheduled task
+    Register-ScheduledTask -TaskName $taskName -Description $taskDescription `
+        -Trigger $trigger,$rebootTrigger -Action $action -Settings $settings `
+        -User "SYSTEM" -RunLevel Highest
+    
+    Write-RelaxedIT -logtext  "Scheduled task '$taskName' has been successfully created."
+    
+}
+# Define the scheduled task name and other parameters
 
 function RelaxedIT.Install.All {
     param (

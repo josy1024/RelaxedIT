@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.29 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.30 :-)")
     
 }
 
@@ -68,7 +68,7 @@ function Get-ColorText {
     return $text
 }
 
-function Get-ConfigfromJSON {
+function Get-RelaxedITConfig {
     <#
     .SYNOPSIS
         json array config file
@@ -79,7 +79,7 @@ function Get-ConfigfromJSON {
     .LINK
         Specify a URI to a help page, this will show when Get-Help -Online is used.
     .EXAMPLE
-        # $config = Get-ConfigfromJSON -match "2" -config .\mandant.json
+        # $config = Get-RelaxedITConfig -match "2" -config .\mandant.json
         # $config.ConfigValue    
     #>
     param (

@@ -9,6 +9,12 @@ RelaxedIT powershell module
 ```powershell
 Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
 Install-Module RelaxedIT.EnergySaver -Force -Scope AllUsers -AllowClobber
+Install-Module RelaxedIT.Update -Force -Scope AllUsers -AllowClobber
+Install-Module RelaxedIT* -Force -Scope AllUsers -AllowClobber
+
+# Install Auto-Updater Task
+RelaxedIT.Update.Task.Install
+
 ```
 * Published to PowershellGallery: https://www.powershellgallery.com/packages?q=relaxedIT
 

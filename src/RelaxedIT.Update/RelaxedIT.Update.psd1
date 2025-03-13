@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT.Update.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.28'
+ModuleVersion = '0.0.29'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -70,6 +70,7 @@ Description = 'relaxed IT Update'
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = 'Test-RelaxedIT.Update', 'RelaxedIT.Update.All', 
+               'RelaxedIT.Update.Task', 'RelaxedIT.Update.Task.Install', 
                'RelaxedIT.Install.All', 'Update-RelaxedITModuleAndRemoveOld'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

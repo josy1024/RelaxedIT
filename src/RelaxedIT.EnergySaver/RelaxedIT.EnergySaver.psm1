@@ -11,7 +11,7 @@
         Write-RelaxedIT "[Initial]: copy default config: ""$config"""
     }
 
-    $processnames = (Get-ConfigfromJSON -config $config).id
+    $processnames = (Get-RelaxedITConfig -config $config).id
 
     while ($true) {
         # Check if EnergySaverBlockingapps are running?
