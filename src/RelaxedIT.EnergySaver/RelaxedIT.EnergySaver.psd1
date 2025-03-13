@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT.EnergySaver.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.32'
+ModuleVersion = '0.0.34'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
