@@ -1,3 +1,5 @@
+# Az.Storage. AzTable
+
 # Define variables
 $resourceGroupName = "WE-josy1024-Nutzungsbasiert-Standard"
 $storageAccountName = "endpointlogger"
@@ -34,12 +36,7 @@ $entity = @{
     userid = 1
 }
 
-$table = get-AzStorageTable -Name $tableName -Context $storageContext
-
-Add-AzTableRow -table $table -entity $entity
-
-
- $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
+$table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
  
 # Insert the entity into the table
 $entity | Add-AzTableRow -Table $table

@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.31"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.33"
 }
 
 function RelaxedIT.Update.All {
@@ -66,6 +66,19 @@ function Update-LastRunTime {
    Write-RelaxedIT -LogText  "Timestamp updated at $LastrunTime."
 }
 
+function RelaxedIT.Resources.Install
+{
+    param (
+        [string]$Scope = "AllUsers"
+    )
+
+    Install-Module -Name "Az.Resources" -Force -Scope $Scope
+    Install-Module -Name "Az.Storage" -Force -Scope $Scope
+    Install-Module -Name "AzTable" -Force -Scope $Scope
+
+}
+# https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-how-to-use-powershell
+	
 function RelaxedIT.Update.Task {
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
