@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.26",
+    $nextversion="0.0.29",
     [int]$publish=99
 )
 function Get-NextFixVersion {
@@ -62,7 +62,7 @@ function Update-VersionInScript {
 
     $nextbuildversion = Get-NextFixVersion -version $currentVersion
 
-    Write-customLOG -LogText ("Prepare Next: $nextbuildversion ""$filePath"" ($currentVersion)")
+    Write-RelaxedIT -LogText ("Prepare Next: $nextbuildversion ""$filePath"" ($currentVersion)")
 
     if (test-path -path $filePath) {
         # Read the content of the file
@@ -74,10 +74,10 @@ function Update-VersionInScript {
         # Write the updated content back to the file
         Set-Content -Path $filePath -Value $fileContent  -Encoding utf8BOM
 
-        Write-customLOG -LogText "Version updated from $currentVersion to $nextbuildversion in ""$filePath"""
+        Write-RelaxedIT -LogText "Version updated from $currentVersion to $nextbuildversion in ""$filePath"""
     }
     else {
-        Write-customLOG -LogText "[ERR] in Update-VersionInScript: File not found: ""$filePath"""
+        Write-RelaxedIT -LogText "[ERR] in Update-VersionInScript: File not found: ""$filePath"""
     }
 }
 
@@ -108,7 +108,7 @@ if ($publish -eq 1 -or $publish -eq 99) {
 $submodules = @("EnergySaver", "Update")
 
 foreach ($submodule in $submodules) {
-    Write-customLOG -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
+    Write-RelaxedIT -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
     $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"    
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -FunctionsToExport $functionsToExport
@@ -129,5 +129,5 @@ if ($publish -ge 1) {
 }
 
 $findmodule  = Find-Module -Name $module
-Write-customLOG -LogText "Find_module Check ONLINE: ""$($findmodule.Name)"" ($($findmodule.Version))"
+Write-RelaxedIT -LogText "Find_module Check ONLINE: ""$($findmodule.Name)"" ($($findmodule.Version))"
 

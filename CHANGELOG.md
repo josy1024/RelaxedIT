@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.28] - 2025-03-13
+
+- V0.0.28 New: RelaxedIT.Install.All
+- V0.0.27 Output Color Changes
+- V0.0.26 Rename Write-Host Function to "Write-RelaxedIT"
+- v0.0.25 Editor Colors, Get-ColorText colors
+
 ## [0.0.21] - 2025-03-11
 
 - v0.0.21 Fix: Update-RelaxedITModuleAndRemoveOld

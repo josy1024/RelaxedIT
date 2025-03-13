@@ -2,13 +2,20 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-customLOG -logtext "Test-RelaxedIT.Update v0.0.26"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.29"
 }
 
 function RelaxedIT.Update.All {
-    if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-        Write-customLOG -logtext "[ERR] Please run this script as an administrator."
-        return
+    param (
+        [string]$Scope = "AllUsers"
+    )
+
+    if ($Scope = "AllUsers")
+    {
+        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+            Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
+            return
+        }
     }
 
     Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
@@ -16,9 +23,26 @@ function RelaxedIT.Update.All {
     #Fallback to install and update
     Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update")
 
-    Write-customLOG -logtext "RelaxedIT.Update.All DONE"
+    Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
 
+function RelaxedIT.Install.All {
+    param (
+        [string]$Scope = "AllUsers"
+    )
+
+    if ($Scope = "AllUsers")
+    {
+        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+            Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
+            return
+        }
+    }
+
+    Install-Module -Name "RelaxedIT*" -Force -Scope $Scope
+    
+    Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
+}
 
 Function Update-RelaxedITModuleAndRemoveOld {
     param (
@@ -26,7 +50,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
     )
 
     foreach ($ModuleName in $ModuleNames) {
-        Write-customLOG -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName""" 
+        Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName""" 
         
         # Install or update the module
         Install-Module -Name $ModuleName -Force -Scope AllUsers -AllowClobber
@@ -36,7 +60,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
 
         # Remove older versions, if any
         Get-InstalledModule -Name $ModuleName -AllVersions | Where-Object { $_.Version -ne $LatestVersion } | ForEach-Object {
-            Write-customLOG -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
+            Write-RelaxedIT -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
     }

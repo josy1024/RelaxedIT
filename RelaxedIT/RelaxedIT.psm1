@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.26 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.29 :-)")
     
 }
 
@@ -103,19 +103,22 @@ function Get-ConfigfromJSON {
     if ($result) {
         return $result
     } else {
-        Write-customLOG -logtext ("No configuration found for $id : $match")
+        Write-RelaxedIT -logtext ("No configuration found for $id : $match")
     }
 }
 
-function Write-customLOG
+function Write-RelaxedIT
 {   [CmdletBinding()]
     param (
         [Parameter()]
         [string]$logtext,
-        [string]$logfilepath="c:\temp\ps\default.log"
+        [string]$logfilepath="c:\temp\ps\default.log",
+        [int]$level=0
     )
-    write-host ("" + (Get-LogDateString) + " " + (Get-ColorText -text $logtext))
+    write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline
+    write-host (Get-ColorText -text $logtext)
 
+    
     # Überprüfen der Umgebungsvariable "relaxedlog"
     $relaxedlog = Get-EnvVar -name "relaxedlog"
 
