@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.30] - 2025-03-13
 
 - V0.0.30 New: Start-RelaxedLog -action "logfilepraefix"
-- V0.0.29 New: AUTOUPDATER Task: RelaxedIT.Update.Task.Install
+- V0.0.29 New: AUTOUPDATER Task: **RelaxedIT.Update.Task.Install**
 - V0.0.28 New: RelaxedIT.Install.All
 - V0.0.27 Output Color Changes
 - V0.0.26 Rename Write-Host Function to "Write-RelaxedIT"
