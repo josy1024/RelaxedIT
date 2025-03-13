@@ -26,42 +26,64 @@ function RelaxedIT.Update.All {
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
 
-function RelaxedIT.Update.Task {
+function Compare-LastRun {
     param (
-        [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
+        [string]$LastrunTime,
+        [int]$maxHours
+    )
+    # Check if the file exists
+    if (Test-Path $LastrunTime) {
+        # Read the last run time from the file
+        $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
+        $lastRunTimestamp = Get-Date $lastRunData.LastRun
+
+        # Calculate the hours since the last run
+        $hoursSinceLastRun = (Get-Date) - $lastRunTimestamp
+        return $hoursSinceLastRun.TotalHours -ge $maxHours
+    } else {
+       Write-RelaxedIT -LogText  "Timestamp file not found. Task will run for the first time."
+        return $true
+    }
+}
+
+function Update-LastRunTime {
+    param (
+        [string]$LastrunTime
     )
 
-    Start-RelaxedLog -action "Update.Task"
     # Ensure the folder exists
     $folderPath = Split-Path $LastrunTime
     if (-not (Test-Path $folderPath)) {
         New-Item -ItemType Directory -Path $folderPath -Force
     }
 
-    # Check if the file exists
-    if (Test-Path -Path $LastrunTime) {
-        # Read the last run time from the file
-        $lastRunData = Get-Content -Path $LastrunTime | ConvertFrom-Json
-        $lastRunTimestamp = Get-Date $lastRunData.LastRun
+    # Update the timestamp in the file
+    $timestampData = @{
+        LastRun = (Get-Date).ToString("o") # ISO 8601 format
+    } | ConvertTo-Json -Depth 1
+    $timestampData | Set-Content -Path $LastrunTime -Force
 
-        # Check if more than 7 days have passed
-        $daysSinceLastRun = (Get-Date) - $lastRunTimestamp
-        if ($daysSinceLastRun.TotalDays -le 7) {
-            Write-RelaxedIT "Task was executed less than 7 days ago. Skipping."
-            return
-        }
-    } else {
-        Write-RelaxedIT "Timestamp file not found. Task will run for the first time."
+   Write-RelaxedIT -LogText  "Timestamp updated at $LastrunTime."
+}
+
+function RelaxedIT.Update.Task {
+    param (
+        [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
+    )
+
+    Start-RelaxedLog -action "Update.Task"
+
+    # Check if task should run using Compare-LastRun
+    if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours (7 * 24))) {
+       Write-RelaxedIT -LogText  "Task was executed less than 7 days ago. Skipping."
+        return
     }
 
     # Run the RelaxedIT.Update.All command
     RelaxedIT.Update.All
 
     # Update the timestamp
-    $timestampData = @{
-        LastRun = (Get-Date).ToString("o") # ISO 8601 format
-    } | ConvertTo-Json -Depth 1
-    $timestampData | Set-Content -Path $LastrunTime -Force
+    Update-LastRunTime -LastrunTime $LastrunTime
 
     Write-RelaxedIT "Task completed and timestamp updated."
 
