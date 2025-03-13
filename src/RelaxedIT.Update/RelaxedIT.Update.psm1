@@ -101,7 +101,7 @@ function RelaxedIT.Update.Task {
 
     # Run the RelaxedIT.Update.All command
     RelaxedIT.Update.All
-    RelaxedIT.Resources.Install 
+    RelaxedIT.Resources.Install
 
     # Update the timestamp
     Update-LastRunTime -LastrunTime $LastrunTime
