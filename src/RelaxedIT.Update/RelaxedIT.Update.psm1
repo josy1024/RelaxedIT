@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.30"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.31"
 }
 
 function RelaxedIT.Update.All {
@@ -31,6 +31,7 @@ function RelaxedIT.Update.Task {
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
     )
 
+    Start-RelaxedLog -action "Update.Task"
     # Ensure the folder exists
     $folderPath = Split-Path $LastrunTime
     if (-not (Test-Path $folderPath)) {
@@ -38,9 +39,9 @@ function RelaxedIT.Update.Task {
     }
 
     # Check if the file exists
-    if (Test-Path $LastrunTime) {
+    if (Test-Path -Path $LastrunTime) {
         # Read the last run time from the file
-        $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
+        $lastRunData = Get-Content -Path $LastrunTime | ConvertFrom-Json
         $lastRunTimestamp = Get-Date $lastRunData.LastRun
 
         # Check if more than 7 days have passed

@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.30 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.31 :-)")
     
 }
 
@@ -107,6 +107,18 @@ function Get-RelaxedITConfig {
     }
 }
 
+function Start-RelaxedLog
+{   [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]$action="action",
+        [string]$logfilepath="c:\temp\ps\default.log"
+    )
+    $logname = "$action" + ($MyInvocation.ScriptName.Split("\")[-1]).trimend(".ps1") +(Get-LogDateFileString) + ".log"
+
+    $logfilepath = $logfilepath -replace "default.log", $logname
+    Set-EnvVar -name "relaxedlog" -value $logfilepath
+}
 function Write-RelaxedIT
 {   [CmdletBinding()]
     param (

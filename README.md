@@ -4,7 +4,7 @@ RelaxedIT powershell module
 
 * [Changelog](CHANGELOG.md)
 
-## Install (ADMIN)
+## Install (as ADMIN)
 
 ```powershell
 Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
@@ -22,6 +22,11 @@ RelaxedIT.Update.Task.Install
 ## Module Management (DEV)
 
 ```powershell
+
+just:
+ .\publish.ps1
+
+
 . .\vars.ps1
 
 Install-Module -Name PowerShellGet
@@ -37,6 +42,11 @@ Test-Modulemanifest -path ./RelaxedIT/RelaxedIT.psd1
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
 
+```
+
+### New Module
+
+```powershell
 
 $submodule="Update"
 mkdir ./src/$module.$submodule/
@@ -53,11 +63,3 @@ Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
 
 ## TESTING
 
-```
-# TODO://in publish einbauen
-# Get all functions in the module
-$Functions = Get-Command -Module YourModule | Where-Object { $_.CommandType -eq 'Function' } | Select-Object -ExpandProperty Name
-
-# Update the module manifest
-Update-ModuleManifest -Path $ModuleManifestPath -FunctionsToExport $Functions
-```

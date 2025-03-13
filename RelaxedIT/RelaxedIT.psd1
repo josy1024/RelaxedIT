@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT'
 
 # Version number of this module.
-ModuleVersion = '0.0.29'
+ModuleVersion = '0.0.30'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -71,7 +71,7 @@ PowerShellVersion = '5.1'
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 FunctionsToExport = 'Test-RelaxedIT', 'Write-RelaxedIT', 'Get-ColorText', 
                'Get-RelaxedITConfig', 'Get-LogDateString', 'Get-LogDateFileString', 
-               'Get-EnvVar', 'Set-EnvVar'
+               'Get-EnvVar', 'Set-EnvVar', 'Start-RelaxedLog'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
