@@ -7,6 +7,7 @@
     
     if (!(test-path -path $config ))
     {   $base = (Get-Module RelaxedIT.EnergySaver).ModuleBase
+        Test-AndCreatePath -Path (Get-BasePath -Path $config)
         copy-item -Path (join-path $base "EnergySaver.json") -Destination $config
         Write-RelaxedIT "[Initial]: copy default config: ""$config"""
     }

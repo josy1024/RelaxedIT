@@ -125,6 +125,7 @@ function Write-RelaxedIT
         [Parameter()]
         [string]$logtext,
         [string]$logfilepath="c:\temp\ps\default.log",
+        [string]$ForegroundColor="green", #compat only to Write-Host
         [int]$level=0
     )
     write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline

@@ -47,15 +47,15 @@ Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
 ### New Module
 
 ```powershell
-
-$submodule="Update"
+$module="RelaxedIT"
+$submodule="Tools"
 mkdir ./src/$module.$submodule/
-New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1 -PassThru
+New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1 
 
+Write-RelaxedIT -LogText  "# $module.$submodule" | out-file -path  ./src/$module.$submodule/$module.$submodule.psm1 -append
 Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -LicenseUri 'https://github.com/josy1024/RelaxedIT/blob/main/LICENSE' 
 Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -ProjectUri 'https://github.com/josy1024/RelaxedIT'
 Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -IconUri 'https://raw.githubusercontent.com/josy1024/RelaxedIT/refs/heads/main/img/logo.png'
-Write-RelaxedIT -LogText  "# $module.$submodule" | out-file -path  ./src/$module.$submodule/$module.$submodule.psm1 -append
 
 Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
 

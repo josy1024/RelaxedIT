@@ -105,16 +105,18 @@ if ($publish -eq 1 -or $publish -eq 99) {
 }
 
 
-$submodules = @("EnergySaver", "Update")
+$submodules = @("EnergySaver", "Update", "Tools")
 
 foreach ($submodule in $submodules) {
     Write-RelaxedIT -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
+    Update-InFileContent -FilePath "./src/$module.$submodule/$module.$submodule.psm1" -OldText 'Write-Host "' -NewText 'Write-RelaxedIT -logtext "' -ErrorAction SilentlyContinue 
     $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"    
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -FunctionsToExport $functionsToExport
     Update-VersionInScript -currentVersion $nextversion -filePath "./src/$module.$submodule/$module.$submodule.psm1" 
 
-    Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
+    $ret = Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
+    Write-RelaxedIT -logtext "Test-Modulemanifest: RET: ""$ret"""
 
     if ($publish -ge 2 -or $publish -eq 99) {
         Publish-module -path ./src/$module.$submodule/ -Repository "PSGallery" -Nugetapikey $key
