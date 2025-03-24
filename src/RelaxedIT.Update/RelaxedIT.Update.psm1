@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.36"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.38"
 }
 
 function RelaxedIT.Update.All {
@@ -83,6 +83,18 @@ function RelaxedIT.Resources.Install {
             Write-RelaxedIT -LogText  "Module '$module' is already installed."
         }
     }
+
+    if (!(test-path -path "C:\ProgramData\chocolatey"))
+    {
+        Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    }
+    
+    # TODO: test pwsh7 installed or pwsh7 shell?
+    if (!(test-path -path "C:\Program Files\PowerShell\7\pwsh.exe"))
+    {
+        choco install pwsh -y
+    }
+
 }
 # https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-how-to-use-powershell
 	

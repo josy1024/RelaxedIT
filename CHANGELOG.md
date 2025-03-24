@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- 
+## [0.0.37] - 2025-03-24
+
+* v0.0.37 replace: global write-host in submodules: via publish.ps1 Update-InFileContent
+* V0.0.36 New: RelaxdeIT.Tools
+* v0.0.35 Fix: #1 (requirements check energysaver)
 
 ## [0.0.30] - 2025-03-13
 
