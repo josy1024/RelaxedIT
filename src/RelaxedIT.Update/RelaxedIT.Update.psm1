@@ -21,7 +21,7 @@ function RelaxedIT.Update.All {
     Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
     
     #Fallback to install and update
-    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update")
+    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update", "RelaxedIT.Tools")
 
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
