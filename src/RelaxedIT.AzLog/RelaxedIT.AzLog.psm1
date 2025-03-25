@@ -33,11 +33,14 @@
         break
     }
     try {
+        $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
+        #$sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
+        $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
         $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
 
-        $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
         # Step 2: Modify the entity
         try {
+            $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
             #$entity.PingTimeUTC = Get-LogDateFileString
             $entitiy.action = $action
             $retadd = Update-AzTableRow -table $table -entity $entity
@@ -52,6 +55,8 @@
 
     }
     catch {
+        Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
         $tryinsert = $true
     }
 
@@ -60,13 +65,15 @@
         try {
             $prop = @{
                 PingTimeUTC = Get-LogDateFileString
-                $entitiy.action = $action
+                action = $action
             }
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             return $retadd
         }
         catch {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: UPDATE ERR1: open azure cloud shell and create table ""$tableName"" with sas keys!"
+            Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+            Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
         }
     }
 }

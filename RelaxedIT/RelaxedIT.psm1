@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.40 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.45 :-)")
     
 }
 
@@ -126,6 +126,7 @@ function Write-RelaxedIT
         [string]$logtext,
         [string]$logfilepath="c:\temp\ps\default.log",
         [string]$ForegroundColor="green", #compat only to Write-Host
+        [string]$Color="green", #compat only to Write-Host #todo add alias!
         [int]$level=0
     )
     write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline

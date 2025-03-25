@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.40"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.45"
 }
 
 function RelaxedIT.Update.All {
@@ -21,7 +21,7 @@ function RelaxedIT.Update.All {
     Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
     
     #Fallback to install and update
-    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update", "RelaxedIT.Tools", "RelaxedIT.AzLog")
+    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog")
 
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
@@ -103,18 +103,37 @@ function RelaxedIT.Update.Task {
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"
     )
 
-    Start-RelaxedLog -action "Update.Task"
+    try {
+        Start-RelaxedLog -action "Update.Task"
 
-    # Check if task should run using Compare-LastRun
-    if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours (7 * 24))) {
-       Write-RelaxedIT -LogText  "Task was executed less than 7 days ago. Skipping."
-        return
+        # Check if task should run using Compare-LastRun
+        if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours (7 * 24))) {
+        Write-RelaxedIT -LogText  "Task was executed less than 7 days ago. Skipping."
+            return
+        }
+        RelaxedIT.AzLog.Run.Ping -action "Start"
     }
+    catch {
+        Write-RelaxedIT -logtext ("# Ping (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
 
     # Run the RelaxedIT.Update.All command
-    RelaxedIT.AzLog.Run.Ping -action "Start"
-    RelaxedIT.Update.All
-    RelaxedIT.Resources.Install
+    try {
+        RelaxedIT.Update.All
+    }
+    catch {
+        Write-RelaxedIT -logtext ("# RelaxedIT.Update.All(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
+
+    try {
+        RelaxedIT.Resources.Install
+    }
+    catch {
+        Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
 
     # Update the timestamp
     Update-LastRunTime -LastrunTime $LastrunTime
