@@ -48,7 +48,7 @@ Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
 
 ```powershell
 $module="RelaxedIT"
-$submodule="Tools"
+$submodule="AzLog"
 mkdir ./src/$module.$submodule/
 New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1 
 

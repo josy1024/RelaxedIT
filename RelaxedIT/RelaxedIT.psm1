@@ -1,7 +1,7 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.38 :-)")
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.40 :-)")
     
 }
 

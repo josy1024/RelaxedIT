@@ -1,0 +1,5 @@
+{
+    "sasToken": "#insert sas token here",
+    "storageAccountName": "endpointlogger",
+    "tableName": "table01"
+}

@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.38"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.40"
 }
 
 function RelaxedIT.Update.All {
@@ -21,7 +21,7 @@ function RelaxedIT.Update.All {
     Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
     
     #Fallback to install and update
-    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update", "RelaxedIT.Tools")
+    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.EnergySaver", "RelaxedIT.Update", "RelaxedIT.Tools", "RelaxedIT.AzLog")
 
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
@@ -112,12 +112,14 @@ function RelaxedIT.Update.Task {
     }
 
     # Run the RelaxedIT.Update.All command
+    RelaxedIT.AzLog.Run.Ping -action "Start"
     RelaxedIT.Update.All
     RelaxedIT.Resources.Install
 
     # Update the timestamp
     Update-LastRunTime -LastrunTime $LastrunTime
 
+    RelaxedIT.AzLog.Run.Ping -action "Done"
     Write-RelaxedIT "Task completed and timestamp updated."
 
 }
