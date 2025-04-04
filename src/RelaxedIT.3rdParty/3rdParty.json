@@ -1,0 +1,36 @@
+{
+    "programs": [
+        {
+            "id": "adobereader",
+            "params": ""
+        },
+        {
+            "id": "vlc",
+            "params": ""
+        },
+        {
+            "id": "7zip",
+            "params": ""
+        },
+        {
+            "id": "audacity",
+            "params": ""
+        },
+        {
+            "id": "audacity-lame",
+            "params": ""
+        },
+        {
+            "id": "audacity-ffmpeg",
+            "params": ""
+        },
+        {
+            "id": "libreoffice-fresh",
+            "params": ""
+        },
+        {
+            "id": "pdf24",
+            "params": "\"/Basic\""
+        }
+    ]
+}

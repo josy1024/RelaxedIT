@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.45",
+    $nextversion="0.0.48",
     [int]$publish=99
 )
 function Get-NextFixVersion {
@@ -105,7 +105,7 @@ if ($publish -eq 1 -or $publish -eq 99) {
 }
 
 
-$submodules = @("Update", "EnergySaver", "Tools", "AzLog")
+$submodules = @("Update", "EnergySaver", "Tools", "AzLog", "3rdParty")
 
 foreach ($submodule in $submodules) {
     Write-RelaxedIT -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "

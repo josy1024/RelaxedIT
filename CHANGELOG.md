@@ -4,8 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+missing version numbers are for refactoring, tests and code optimisations.
+
+[README.md](README.md)
 
 ## [Unreleased]
+
+## [0.0.47] - 2025-04-04
+
+* v0.0.47 New: RelaxedIT.3rdParty.Update manage weekly 3rd Party Software upgrades
 
 ## [0.0.44] - 2025-03-24
 

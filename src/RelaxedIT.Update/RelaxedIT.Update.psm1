@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.45"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.48"
 }
 
 function RelaxedIT.Update.All {
@@ -134,6 +134,16 @@ function RelaxedIT.Update.Task {
         Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }    
+
+    try {
+        #RelaxedIT.3rdParty.upgrade
+        Start-Process pwsh.exe -ArgumentList '-NoProfile -Command "Import-Module RelaxedIT.3rdParty; RelaxedIT.3rdParty.Update"'
+    }
+    catch {
+        Write-RelaxedIT -logtext ("#     RelaxedIT.3rdParty.upgrade(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
+
 
     # Update the timestamp
     Update-LastRunTime -LastrunTime $LastrunTime

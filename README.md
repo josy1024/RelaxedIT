@@ -2,7 +2,7 @@
 
 RelaxedIT powershell module
 
-* [Changelog](CHANGELOG.md)
+* [CHANGELOG.md](CHANGELOG.md)
 
 ## Install (as ADMIN)
 
@@ -52,7 +52,7 @@ Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
 
 ```powershell
 $module="RelaxedIT"
-$submodule="AzLog"
+$submodule="3rdParty"
 mkdir ./src/$module.$submodule/
 New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1 
 
