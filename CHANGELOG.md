@@ -11,8 +11,8 @@ missing version numbers are for refactoring, tests and code optimisations.
 ## [Unreleased]
 
 ## [0.0.47] - 2025-04-04
-
-* v0.0.47 New: RelaxedIT.3rdParty.Update manage weekly 3rd Party Software upgrades
+* v0.0.48 New: Uninstall then Install 3rd party Software
+* v0.0.47 New: RelaxedIT.3rdParty.Update manage weekly 3rd Party Software upgrades via https://chocolatey.org/
 
 ## [0.0.44] - 2025-03-24
 

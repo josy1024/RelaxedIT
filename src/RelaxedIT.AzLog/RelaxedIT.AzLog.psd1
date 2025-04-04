@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT.AzLog.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.48'
+ModuleVersion = '0.0.50'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
