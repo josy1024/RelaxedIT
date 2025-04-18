@@ -12,26 +12,53 @@
         Write-RelaxedIT "[Initial]: copy default config: ""$config"""
     }
 
-    $processnames = (Get-RelaxedITConfig -config $config).id
+    $configOBJ = (Get-RelaxedITConfig -config $config)
+    $processnames = $configOBJ.id
+
+
+    $monitorTimeouts = @{}
+    foreach ($item in $configOBJ) {
+        $processNamePattern = $item.id
+        $monitorTimeout = $null -ne $item.'monitor-timeout-ac' ? $item.'monitor-timeout-ac' : 10
+        $monitorTimeouts[$processNamePattern] = $monitorTimeout
+    }
+    
+
 
     while ($true) {
         # Check if EnergySaverBlockingapps are running?
         $anyrunning = Get-Process -Name $processnames -ErrorAction SilentlyContinue
-
+        
+    
         if ($anyrunning) {
             # Change the terminal title
             $host.ui.RawUI.WindowTitle = "NO: Energy Server Mode"
-
             # Disable sleep mode
             powercfg -change -standby-timeout-ac 0
+            foreach ($process in $anyrunning) {
+                $processName = $process.ProcessName
+                $matchingPattern = $monitorTimeouts.Keys | Where-Object { $processName -match $_ }
+                if ($matchingPattern) {
+                    $monitorTimeout = $monitorTimeouts[$matchingPattern]
+                    powercfg -change -monitor-timeout-ac $monitorTimeout
+                    Write-RelaxedIT -logtext """$processName"" is running. Monitor timeout set to $monitorTimeout."
+                }
+            }
+
+        } elseif ($null -eq $anyrunning) {
+            # Change the terminal title
+            $host.ui.RawUI.WindowTitle = "EnergyTimeout 10 Min"
+            # Enable sleep mode after 10 minutes
+            powercfg -change -standby-timeout-ac 10
             powercfg -change -monitor-timeout-ac 10
-            Write-RelaxedIT -logtext ($anyrunning.ProcessName -join ";")
-            Write-RelaxedIT -logtext "is running. Sleep mode disabled."
+            Write-RelaxedIT -logtext "No ""$config"" is running. Sleep mode enabled after 10 minutes."
+                    
+    
         } else {
             $host.ui.RawUI.WindowTitle = "EnergyTimeout 20 Min"
             # Enable sleep mode after 20 minutes
             powercfg -change -standby-timeout-ac 20
-            powercfg -change -monitor-timeout-ac 10
+            powercfg -change -monitor-timeout-ac 20
             Write-RelaxedIT -logtext "Neither ""$config"" is running. Sleep mode enabled after 20 minutes."
         }
 
