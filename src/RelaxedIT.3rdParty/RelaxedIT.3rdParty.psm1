@@ -43,8 +43,9 @@
         return
     }
 
-    # Get the list of outdated programs once
-    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated
+    # Get the list of outdated programs once 
+    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output 
+    $outdatedData = $outdatedPrograms | ConvertFrom-Csv -Delimiter '|' -Header packagename,currentversion,availableversion,pinned
 
     # Loop through each program and execute the Chocolatey upgrade command
     foreach ($program in $programList) {
@@ -68,8 +69,9 @@
     # error handling for untested apps 
     # Write-RelaxedIT "[Upgrading]: upgrading all ..."
     # & "C:\ProgramData\chocolatey\choco.exe" upgrade -y $id
-
-   
+    # winget upgrade --all --include-unknown -i
+    # winget upgrade $package --include-unknown --silent --accept-source-agreements --accept-package-agreements  --uninstall-previous
+    # 
 
     #clean desktop from shortcuts
     Get-ChildItem -Path "C:\Users\Public\Desktop" -Filter "*.lnk" | foreach-object {
