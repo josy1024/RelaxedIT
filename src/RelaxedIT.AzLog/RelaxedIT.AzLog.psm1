@@ -33,6 +33,25 @@
         break
     }
     try {
+        $displayVersion = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion
+        $productName = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductName
+        $currentBuildNumber = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').CurrentBuildNumber
+        $biosVersion = (Get-WmiObject -Class Win32_BIOS).SMBIOSBIOSVersion
+        $manufacturer = (Get-WmiObject -Class Win32_ComputerSystem).Manufacturer
+        $model = (Get-WmiObject -Class Win32_ComputerSystem).Model
+        
+        $cpu_info = Get-WmiObject -Class Win32_Processor | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
+
+        # Get RAM information
+        $ram_info = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+        $ramGB = $([math]::round($ram_info.Sum / 1GB, 2))
+        
+
+
+    }
+    catch {
+    }
+    try {
         $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
         #$sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
         $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
@@ -41,13 +60,22 @@
         # Step 2: Modify the entity
         try {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
-            #$entity.PingTimeUTC = Get-LogDateFileString
+            
             $entitiy.action = $action
+            $entitiy.displayVersion = $displayVersion
+            $entitiy.productName = $productName
+            $entitiy.currentBuildNumber = $currentBuildNumber
+            $entitiy.biosVersion = $biosVersion
+            $entitiy.manufacturer = $manufacturer
+            $entitiy.model = $model
+            $entitiy.ramGB = $ramGB
+            $entitiy.cpu = $cpu_info | convertto-json
+
             $retadd = Update-AzTableRow -table $table -entity $entity
             return $retadd
         }
         catch {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: PingTimeUTC in ""$tableName"" not found"
+            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found"
             $entity | Remove-AzTableRow -Table $table
             $tryinsert = $true
         }
@@ -66,6 +94,14 @@
             $prop = @{
                 PingTimeUTC = Get-LogDateFileString
                 action = $action
+                displayVersion = $displayVersion
+                productName = $productName
+                currentBuildNumber = $currentBuildNumber
+                biosVersion = $biosVersion
+                manufacturer = $manufacturer
+                model = $model
+                ramGB = $ramGB
+                cpu = ($cpu_info | convertto-json)
             }
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             return $retadd

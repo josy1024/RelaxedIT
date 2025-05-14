@@ -1,9 +1,11 @@
 [
     {
-        "id": "bedrock*"
+        "id": "bedrock*",
+        "monitor-timeout-ac": 120
     },
     {
-        "id": "powerpnt*"
+        "id": "powerpnt*",
+        "monitor-timeout-ac": 120
     },
     {
         "id": "jellyfin*"

@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.52"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.55"
 }
 
 function RelaxedIT.Update.All {
@@ -98,6 +98,15 @@ function RelaxedIT.Resources.Install {
 }
 # https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-how-to-use-powershell
 	
+function RelaxedIT.Resources.OneclickInstall {
+    param (
+        [string]$Scope = "AllUsers"
+    )
+    RelaxedIT.Resources.Install
+    pwsh -c Realxedit.Update.Task
+    pwsh -c RelaxedIT.Update.Task.Install
+}
+
 function RelaxedIT.Update.Task {
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json"

@@ -11,11 +11,17 @@ missing version numbers are for refactoring, tests and code optimisations.
 ## [Unreleased]
 
 * get-help for all modules
+* RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.53] - 2025-05-15
+
+* 0.0.53 New Azlog CPU + RAM
+* 0.0.52 New: Azlog Hardware + OS Infos
+* 0.0.51 New: example config for [energysaver.json](config/energysaver.json)
 
 ## [0.0.50] - 2025-04-19
 
-* 0.0.50 Mew monitor-timeout-ac  n energysaver.json
+* 0.0.50 Mew: monitor-timeout-ac  n energysaver.json
 
 ## [0.0.47] - 2025-04-04
 
