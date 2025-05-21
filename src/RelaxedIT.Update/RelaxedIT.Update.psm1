@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.61"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.62"
 }
 
 function RelaxedIT.Update.All {
@@ -41,8 +41,8 @@ function Compare-LastRun {
         $hoursSinceLastRun = (Get-Date) - $lastRunTimestamp
         return $hoursSinceLastRun.TotalHours -ge $maxHours
     } else {
-       Write-RelaxedIT -LogText  "Timestamp file not found. Task will run for the first time."
-        return $true
+       Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found."
+       return $true
     }
 }
 
@@ -63,7 +63,7 @@ function Update-LastRunTime {
     } | ConvertTo-Json -Depth 1
     $timestampData | Set-Content -Path $LastrunTime -Force
 
-   Write-RelaxedIT -LogText  "Timestamp updated at $LastrunTime."
+   Write-RelaxedIT -LogText  "Timestamp updated to ""$timestampData"" at File: ""$LastrunTime""."
 }
 
 function RelaxedIT.Resources.Install {
@@ -112,18 +112,20 @@ function RelaxedIT.Resources.OneclickInstall {
 function RelaxedIT.Update.Task {
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json",
-        [int]$writemode = 1
+        [int]$writemode = 1,
+        [int]$maxhours = 168
     )
 
     try {
         Start-RelaxedLog -action "Update.Task"
 
-        if ($writemode -ge 1) {
-           remove-item -Path $LastrunTime -ErrorAction silentlycontinue
+        if ($writemode -gt 1) {
+            Write-RelaxedIT -LogText "Remove Timestamp file ""$LastrunTime""" -ForegroundColor Magenta
+            remove-item -Path $LastrunTime -ErrorAction silentlycontinue
         }
         # Check if task should run using Compare-LastRun
-        if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours (7 * 24))) {
-            Write-RelaxedIT -LogText  "Task was executed less than 7 days ago. Skipping."
+        if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours ($maxhours))) {
+            Write-RelaxedIT -LogText  "Task was executed less than $maxhour hours ago. Skipping."
             $ret = RelaxedIT.AzLog.Run.Ping -action "Skip"
             return
         }
