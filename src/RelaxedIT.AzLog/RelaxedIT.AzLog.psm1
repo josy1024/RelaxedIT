@@ -91,7 +91,7 @@
             return $retadd
         }
         catch {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found"
+            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found" #TODO: FIX remove maybe not needed?!?!
             $entity | Remove-AzTableRow -Table $table
             Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
             Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
