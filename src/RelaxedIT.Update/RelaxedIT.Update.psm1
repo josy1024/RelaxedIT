@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.63"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.65"
 }
 
 function RelaxedIT.Update.All {
@@ -39,7 +39,13 @@ function Compare-LastRun {
 
         # Calculate the hours since the last run
         $hoursSinceLastRun = (Get-Date) - $lastRunTimestamp
-        return $hoursSinceLastRun.TotalHours -ge $maxHours
+        $skipcheck = ($hoursSinceLastRun.TotalHours -ge $maxHours)
+        if ($skipcheck)
+        {
+            Write-RelaxedIT -LogText  ("[SKIP] Task was executed less than $maxhours hours ago. LastRunHours: " + $hoursSinceLastRun.TotalHours)
+        }
+
+        return ($skipcheck)
     } else {
        Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found."
        return $true
@@ -125,7 +131,6 @@ function RelaxedIT.Update.Task {
         }
         # Check if task should run using Compare-LastRun
         if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours ($maxhours))) {
-            Write-RelaxedIT -LogText  "Task was executed less than $maxhour hours ago. Skipping."
             $ret = RelaxedIT.AzLog.Run.Ping -action "Skip"
             return
         }

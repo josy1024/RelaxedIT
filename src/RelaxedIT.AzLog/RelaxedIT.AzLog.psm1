@@ -122,15 +122,15 @@
                 cpu = ($cpu_info | convertto-json)
                 pendingdrivers =  $pendingdrivers
             }
-            Write-RelaxedIT -logtext "Add-AzTableRow" -NoNewline
+            Write-RelaxedIT -logtext "Add-AzTableRow" #-NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
+                Write-RelaxedIT -logtext "OK"  -ForegroundColor Green #-noWriteDate
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
+                Write-RelaxedIT -logtext "[ERR] $retadd" -ForegroundColor Red #-noWriteDate 
             }
             return $retadd
         }
