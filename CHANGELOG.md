@@ -13,8 +13,9 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
-## [0.0.58] - 2025-05-21
+## [0.0.61] - 2025-05-21
 
+* 0.0.61 Fixes an optimizes in outputs
 * 0.0.58 New: skip state in azlog
 * 0.0.57 New: Azlog pendingdrivers updates
 * 0.0.56 Fix: azlog "action" write table not found error

@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.59",
+    $nextversion="0.0.61",
     [int]$publish=99
 )
 function Get-NextFixVersion {

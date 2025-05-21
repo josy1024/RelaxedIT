@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.59"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.61"
 }
 
 function RelaxedIT.Update.All {
@@ -112,22 +112,22 @@ function RelaxedIT.Resources.OneclickInstall {
 function RelaxedIT.Update.Task {
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json",
-        [int]$writemmode = 1
+        [int]$writemode = 1
     )
 
     try {
         Start-RelaxedLog -action "Update.Task"
 
-        if ($writemmode -ge 1) {
+        if ($writemode -ge 1) {
            remove-item -Path $LastrunTime -ErrorAction silentlycontinue
         }
         # Check if task should run using Compare-LastRun
         if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours (7 * 24))) {
             Write-RelaxedIT -LogText  "Task was executed less than 7 days ago. Skipping."
-            RelaxedIT.AzLog.Run.Ping -action "Skip"
+            $ret = RelaxedIT.AzLog.Run.Ping -action "Skip"
             return
         }
-        RelaxedIT.AzLog.Run.Ping -action "Start"
+        $ret = RelaxedIT.AzLog.Run.Ping -action "Start"
     }
     catch {
         Write-RelaxedIT -logtext ("# Ping (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
@@ -164,7 +164,7 @@ function RelaxedIT.Update.Task {
     # Update the timestamp
     Update-LastRunTime -LastrunTime $LastrunTime
 
-    RelaxedIT.AzLog.Run.Ping -action "Done"
+    $ret = RelaxedIT.AzLog.Run.Ping -action "Done"
     Write-RelaxedIT "Task completed and timestamp updated."
 
 }

@@ -80,6 +80,14 @@
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action"
             $retadd = Update-AzTableRow -table $table -entity $entity
+            if ($retadd.HttpStatuscode -eq 204)
+            {
+                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
+            }
+            else
+            {
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
+            }
             return $retadd
         }
         catch {
@@ -114,8 +122,16 @@
                 cpu = ($cpu_info | convertto-json)
                 pendingdrivers =  $pendingdrivers
             }
-            Write-RelaxedIT -logtext "Add-AzTableRow"
+            Write-RelaxedIT -logtext "Add-AzTableRow" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
+            if ($retadd.HttpStatuscode -eq 204)
+            {
+                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
+            }
+            else
+            {
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
+            }
             return $retadd
         }
         catch {
