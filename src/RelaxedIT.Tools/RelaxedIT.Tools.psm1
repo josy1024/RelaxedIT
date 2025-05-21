@@ -66,6 +66,6 @@ function Update-InFileContent {
     # Write the updated content back to the file
     Set-Content -Path $FilePath -Value $UpdatedContent -Encoding utf8BOM
 
-    Write-RelaxedIT -logtext "Replaced ""$OldText"" with ""$NewText"" in ""$FilePath""" -ForegroundColor Green
+    Write-RelaxedIT -logtext "Replaced ""$OldText"" with ""$NewText"" in ""$FilePath""" -ForegroundColor Green -level 2
 }
 

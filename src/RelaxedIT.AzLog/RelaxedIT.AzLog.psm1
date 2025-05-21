@@ -46,10 +46,17 @@
         $ram_info = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
         $ramGB = $([math]::round($ram_info.Sum / 1GB, 2))
         
+        Import-Module PSWindowsUpdate
 
+        # Alle verfügbaren Updates anzeigen
+        $drivers = Get-WindowsUpdate -Category "Drivers"
+        $pendingdrivers = ($drivers.Title | Sort-Object -Unique) -join "; "
 
     }
     catch {
+        Write-RelaxedIT -logtext ("# GetOSInventory (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+
     }
     try {
         $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
@@ -61,22 +68,25 @@
         try {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
             
-            $entitiy.action = $action
-            $entitiy.displayVersion = $displayVersion
-            $entitiy.productName = $productName
-            $entitiy.currentBuildNumber = $currentBuildNumber
-            $entitiy.biosVersion = $biosVersion
-            $entitiy.manufacturer = $manufacturer
-            $entitiy.model = $model
-            $entitiy.ramGB = $ramGB
-            $entitiy.cpu = $cpu_info | convertto-json
-
+            $entity.action = $action
+            $entity.displayVersion = $displayVersion
+            $entity.productName = $productName
+            $entity.currentBuildNumber = $currentBuildNumber
+            $entity.biosVersion = $biosVersion
+            $entity.manufacturer = $manufacturer
+            $entity.model = $model
+            $entity.ramGB = $ramGB
+            $entity.cpu = $cpu_info | convertto-json
+            $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
+            Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action"
             $retadd = Update-AzTableRow -table $table -entity $entity
             return $retadd
         }
         catch {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found"
             $entity | Remove-AzTableRow -Table $table
+            Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+            Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
             $tryinsert = $true
         }
 
@@ -102,7 +112,9 @@
                 model = $model
                 ramGB = $ramGB
                 cpu = ($cpu_info | convertto-json)
+                pendingdrivers =  $pendingdrivers
             }
+            Write-RelaxedIT -logtext "Add-AzTableRow"
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             return $retadd
         }

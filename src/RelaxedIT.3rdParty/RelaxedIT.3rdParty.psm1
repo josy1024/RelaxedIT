@@ -4,6 +4,38 @@
          [string]$uninstallConfig = "C:\ProgramData\RelaxedIT\3rdPartyUninstallPrograms.json"
     )
    
+    
+    #enable Optional Windows Updates
+
+    try {
+       # Ensure the registry path exists
+       if (-not (Test-Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate")) {
+            New-Item -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Force | Out-Null
+       }
+       # Set the registry values
+       Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "AllowOptionalContent" -Value 2 -Type DWord
+       Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "SetAllowOptionalContent" -Value 2 -Type DWord
+       
+        # Delete the 'ExcludeWUDriversInQualityUpdate' value
+        Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "ExcludeWUDriversInQualityUpdate" -ErrorAction SilentlyContinue
+
+        # Set 'SearchOrderConfig' to 1
+        New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching" -Name "SearchOrderConfig" -Value 1 -Type DWord
+
+        # Set 'ExcludeWUDrivers' to 0
+        New-Item -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UpdatePolicy\PolicyState" -Force | Out-Null
+        Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UpdatePolicy\PolicyState" -Name "ExcludeWUDrivers" -Value 0 -Type DWord
+
+    }
+    catch {
+        <#Do this if a terminating exception happens#>
+        Write-RelaxedIT "An error occurred while applying registry settings: $_"
+        # Optional: log to a file
+        # Add-Content -Path "$env:TEMP\RegistryUpdateError.log" -Value "$(Get-Date): $_"
+    }
+
+
     # uninstall first
     if (Test-path -path $uninstallConfig)
     {
@@ -79,4 +111,25 @@
     }
 }
 
+
+
+function RelaxedIT.3rdParty.WindowsDrivers {
+    param (
+        [string]$config = "C:\ProgramData\RelaxedIT\3rdParty.json",
+          [string]$category ="Drivers"
+    )
+   
+        
+    # Modul importieren
+    Import-Module PSWindowsUpdate
+
+    # Alle verfügbaren Updates anzeigen
+    $drivers = Get-WindowsUpdate -Category $category
+    $lastdriverupdate = ($drivers.Title | Sort-Object -Unique) -join "; "
+
+    # Alle Updates automatisch installieren und ggf. neu starten
+    Install-WindowsUpdate -AcceptAll -IgnoreReboot -Category $category
+     
+
+}
 

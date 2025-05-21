@@ -13,9 +13,16 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.58] - 2025-05-21
+
+* 0.0.58 New: skip state in azlog
+* 0.0.57 New: Azlog pendingdrivers updates
+* 0.0.56 Fix: azlog "action" write table not found error
+* 0.0.55 New: Prepare Auto-install Windows Optional Updates
+
 ## [0.0.53] - 2025-05-15
 
-* 0.0.53 New Azlog CPU + RAM
+* 0.0.53 New: Azlog CPU + RAM
 * 0.0.52 New: Azlog Hardware + OS Infos
 * 0.0.51 New: example config for [energysaver.json](config/energysaver.json)
 

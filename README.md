@@ -1,31 +1,28 @@
 # RelaxedIT
+[![PSGallery Version](https://img.shields.io/powershellgallery/v/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Version)](https://www.powershellgallery.com/packages/RelaxedIT) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Downloads)](https://www.powershellgallery.com/packages/RelaxedIT) [![PowerShell](https://img.shields.io/badge/PowerShell-5.1-blue?style=flat&logo=powershell)](https://www.powershellgallery.com/packages/RelaxedIT) [![PSGallery Platform](https://img.shields.io/powershellgallery/p/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Platform)](https://www.powershellgallery.com/packages/RelaxedIT)
 
-RelaxedIT powershell module
+This module contain Modules and cmdlets to Inventory Devices and Manage 3rd Party Apps 
 
-* [CHANGELOG.md](CHANGELOG.md)
+## Table of Contents
 
-## Install (as ADMIN)
+- [Release Notes](#Release-Notes)
+- [Install](#Install)
+- [Module Management (DEV)](#Module-Management)
+- [New-Module](#New-Module)
+
+# Release Notes
+
+[CHANGELOG.md](CHANGELOG.md)
+
+# Install
 
 ```powershell
-Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
-Install-Module RelaxedIT.Update -Force -Scope AllUsers -AllowClobber
-
-RelaxedIT.Resources.OneclickInstall
-
-
-# Install Requirements
-RelaxedIT.Resources.Install
-
-# Install Auto-Updater Task
-RelaxedIT.Update.Task.Install
-
-# RelaxedIT.Resources.Install
-
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/josy1024/RelaxedIT/blob/main/install.ps1'))
 ```
-* Published to PowershellGallery: https://www.powershellgallery.com/packages?q=relaxedIT
 
+Published to PowershellGallery: https://www.powershellgallery.com/packages?q=relaxedIT
 
-## Module Management (DEV)
+## Module Management
 
 ```powershell
 
