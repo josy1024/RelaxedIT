@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.62"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.63"
 }
 
 function RelaxedIT.Update.All {

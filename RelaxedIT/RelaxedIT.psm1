@@ -127,10 +127,16 @@ function Write-RelaxedIT
         [string]$logfilepath="c:\temp\ps\default.log",
         [string]$ForegroundColor="green", #compat only to Write-Host
         [string]$Color="green", #compat only to Write-Host #todo add alias!
-        [int]$level=0
+        [int]$level=0,
+        [switch]$noNewline = $false,
+        [switch]$noWriteDate = $false
     )
-    write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline
-    write-host (Get-ColorText -text $logtext)
+
+    if (!($noWriteDate))
+    {   write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline
+    }
+
+    write-host (Get-ColorText -text $logtext) -NoNewline:$noNewline
 
     
     # Überprüfen der Umgebungsvariable "relaxedlog"
