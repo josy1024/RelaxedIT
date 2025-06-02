@@ -266,6 +266,6 @@ Function Update-RelaxedITModuleAndRemoveOld {
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
         #Import-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
-        Import-module -name  $ModuleName -Force -Scope Global
+        #Import-module -name  $ModuleName -Force -Scope Global
     }
 }

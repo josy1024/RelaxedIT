@@ -13,8 +13,9 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
-## [0.0.69] - 2025-06-02
+## [0.0.78] - 2025-06-02
 
+* 0.0.7* fixes
 * 0.0.69, trycatch azlog
 * 0.0.68, Rename RelaxedIT.3rdParty.chocolist
 * 0.0.67, Fixes
