@@ -79,15 +79,15 @@
             $entity.cpu = $cpu_info | convertto-json
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
             $entity.SoftwareOutdated = RelaxedIT.chocolist 
-            Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action"
+            Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Update-AzTableRow -table $table -entity $entity
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
+                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green 
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red 
             }
             return $retadd
         }
@@ -124,16 +124,17 @@
                 pendingdrivers =  $pendingdrivers
                 SoftwareOutdated = RelaxedIT.chocolist 
             }
-            Write-RelaxedIT -logtext "Add-AzTableRow" #-NoNewline
+            Write-RelaxedIT -logtext "Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK"  -ForegroundColor Green #-noWriteDate
+                Write-RelaxedIT -logtext "OK"  -noWriteDate -ForegroundColor Green 
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -ForegroundColor Red #-noWriteDate 
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Green 
             }
+            Write-RelaxedIT -LogText ($prop | Out-String) -ForegroundColor Yellow
             return $retadd
         }
         catch {

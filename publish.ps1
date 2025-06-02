@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.66",
+    $nextversion="0.0.67",
     [int]$publish=99
 )
 function Get-NextFixVersion {
@@ -87,8 +87,10 @@ Invoke-WebRequest -Uri https://dist.nuget.org/win-x86-commandline/latest/nuget.e
 Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
 Install-PackageProvider -Name PowerShellGet -Force -Scope CurrentUser
 #>
+set-location -Path $PSScriptRoot
 
 . .\vars.ps1
+
 
 $functionsToExport = Get-AllFunctions -path "./$module/$module.psm1"
 Update-ModuleManifest -Path ./$module/$module.psd1 -FunctionsToExport $functionsToExport

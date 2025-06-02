@@ -15,6 +15,7 @@ missing version numbers are for refactoring, tests and code optimisations.
 
 ## [] - 2025-06-02
 
+* 0.0.66 FeatureTest: SoftwareOutdated
 * 0.0.65 Fix: install.ps1, OneclickInstall, Feature: choco list depricated, RelaxediT.chocolist,
 
 ## [0.0.64] - 2025-05-21
