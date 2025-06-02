@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT.3rdParty.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.67'
+ModuleVersion = '0.0.69'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -69,7 +69,7 @@ Description = 'relaxed IT 3rdParty'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'RelaxedIT.3rdParty.Update', 'RelaxedIT.chocolist', 
+FunctionsToExport = 'RelaxedIT.3rdParty.Update', 'RelaxedIT.3rdParty.chocolist', 
                'RelaxedIT.3rdParty.WindowsDrivers'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.

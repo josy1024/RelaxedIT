@@ -67,7 +67,6 @@
         # Step 2: Modify the entity
         try {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
-            $entity.PingTimeUTC = Get-LogDateFileString
             $entity.action = $action
             $entity.displayVersion = $displayVersion
             $entity.productName = $productName
@@ -78,8 +77,10 @@
             $entity.ramGB = $ramGB
             $entity.cpu = $cpu_info | convertto-json
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
-            $entity.SoftwareOutdated = RelaxedIT.chocolist -ErrorAction SilentlyContinue
+            $entity.SoftwareOutdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
+            $entity.PingTimeUTC = Get-LogDateFileString
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
+
             $retadd = Update-AzTableRow -table $table -entity $entity
             if ($retadd.HttpStatuscode -eq 204)
             {
@@ -93,7 +94,13 @@
         }
         catch {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found" #TODO: FIX remove maybe not needed?!?!
-            $entity | Remove-AzTableRow -Table $table
+            try {
+                    $retadd = Update-AzTableRow -table $table -entity $entity
+
+                }
+            catch {
+                $entity | Remove-AzTableRow -Table $table
+            }
             Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
             Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
             $tryinsert = $true
@@ -122,7 +129,7 @@
                 ramGB = $ramGB
                 cpu = ($cpu_info | convertto-json)
                 pendingdrivers =  $pendingdrivers
-                SoftwareOutdated = RelaxedIT.chocolist 
+                SoftwareOutdated = RelaxedIT.3rdParty.chocolist 
             }
             Write-RelaxedIT -logtext "Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
