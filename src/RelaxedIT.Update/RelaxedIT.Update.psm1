@@ -21,7 +21,7 @@ function RelaxedIT.Update.All {
     #Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
     
     #Fallback to install and update
-    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog")
+    Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog", "RelaxedIT.3rdparty")
 
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
@@ -123,8 +123,30 @@ function RelaxedIT.Update.Task {
         [int]$maxhours = 168
     )
 
+
+
+    # Run the RelaxedIT.Update.All command
     try {
         Start-RelaxedLog -action "Update.Task"
+        Write-RelaxedIT -logtext "RelaxedIT.Update.All"
+        RelaxedIT.Update.All
+    }
+    catch {
+        Write-RelaxedIT -logtext ("# RelaxedIT.Update.All(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
+
+    try {
+        Write-RelaxedIT -logtext "RelaxedIT.Resources.Install"
+        RelaxedIT.Resources.Install
+    }
+    catch {
+        Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }    
+
+    try {
+        Write-RelaxedIT -logtext "Update.Task"
 
         if ($writemode -gt 1) {
             Write-RelaxedIT -LogText "Remove Timestamp file ""$LastrunTime""" -ForegroundColor Magenta
@@ -139,23 +161,6 @@ function RelaxedIT.Update.Task {
     }
     catch {
         Write-RelaxedIT -logtext ("# Ping (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
-
-    # Run the RelaxedIT.Update.All command
-    try {
-        RelaxedIT.Update.All
-    }
-    catch {
-        Write-RelaxedIT -logtext ("# RelaxedIT.Update.All(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
-
-    try {
-        RelaxedIT.Resources.Install
-    }
-    catch {
-        Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }    
 

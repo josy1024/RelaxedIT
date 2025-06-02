@@ -108,8 +108,7 @@
     }
 }
 
-function RelaxedIT.3rdParty.chocolist
-{
+function RelaxedIT.3rdParty.chocolist {
     param (
         [string]$returnformat = "json"
     )

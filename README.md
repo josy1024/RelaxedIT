@@ -62,6 +62,7 @@ Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Ic
 
 Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
 
+# TODO: add new modules in RelaxedIT.Update.All!
 ```
 
 ## TESTING

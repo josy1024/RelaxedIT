@@ -118,7 +118,7 @@
     {
         try {
             $prop = @{
-                PingTimeUTC = Get-LogDateFileString
+                PingTimeUTC = (Get-LogDateFileString)
                 action = $action
                 displayVersion = $displayVersion
                 productName = $productName
@@ -129,7 +129,7 @@
                 ramGB = $ramGB
                 cpu = ($cpu_info | convertto-json)
                 pendingdrivers =  $pendingdrivers
-                SoftwareOutdated = RelaxedIT.3rdParty.chocolist 
+                SoftwareOutdated = (RelaxedIT.3rdParty.chocolist)
             }
             Write-RelaxedIT -logtext "Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
