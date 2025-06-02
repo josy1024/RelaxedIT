@@ -75,9 +75,6 @@
         return
     }
 
-    # Get the list of outdated programs once 
-    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output 
-    $outdatedData = $outdatedPrograms | ConvertFrom-Csv -Delimiter '|' -Header packagename,currentversion,availableversion,pinned
 
     # Loop through each program and execute the Chocolatey upgrade command
     foreach ($program in $programList) {
@@ -111,7 +108,26 @@
     }
 }
 
+function RelaxedIT.chocolist
+{
+    param (
+        [string]$returnformat = "json"
+    )
 
+    # Get the list of outdated programs once 
+    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output 
+    $outdatedData = $outdatedPrograms | ConvertFrom-Csv -Delimiter '|' -Header packagename,currentversion,availableversion,pinned
+
+    if ($returnformat -eq "json")
+    {
+        $json = $outdatedData | ConvertTo-Json
+        return $json
+    }
+    else {
+        return $outdatedData
+    }
+
+}
 
 function RelaxedIT.3rdParty.WindowsDrivers {
     param (

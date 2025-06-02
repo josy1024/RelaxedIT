@@ -17,7 +17,7 @@ This module contain Modules and cmdlets to Inventory Devices and Manage 3rd Part
 # Install
 
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://github.com/josy1024/RelaxedIT/blob/main/install.ps1'))
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/josy1024/RelaxedIT/refs/heads/main/install.ps1'))
 ```
 
 Published to PowershellGallery: https://www.powershellgallery.com/packages?q=relaxedIT

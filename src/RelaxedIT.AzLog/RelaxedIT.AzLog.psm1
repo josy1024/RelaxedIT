@@ -67,7 +67,7 @@
         # Step 2: Modify the entity
         try {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
-            
+            $entity.PingTimeUTC = Get-LogDateFileString
             $entity.action = $action
             $entity.displayVersion = $displayVersion
             $entity.productName = $productName
@@ -78,6 +78,7 @@
             $entity.ramGB = $ramGB
             $entity.cpu = $cpu_info | convertto-json
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
+            $entity.SoftwareOutdated = RelaxedIT.chocolist 
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action"
             $retadd = Update-AzTableRow -table $table -entity $entity
             if ($retadd.HttpStatuscode -eq 204)
@@ -121,6 +122,7 @@
                 ramGB = $ramGB
                 cpu = ($cpu_info | convertto-json)
                 pendingdrivers =  $pendingdrivers
+                SoftwareOutdated = RelaxedIT.chocolist 
             }
             Write-RelaxedIT -logtext "Add-AzTableRow" #-NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop

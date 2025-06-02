@@ -11,6 +11,9 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 Install-module RelaxedIT -Force -Scope AllUsers -AllowClobber
 Install-Module RelaxedIT.Update -Force -Scope AllUsers -AllowClobber
 
+Import-Module RelaxedIT
+Import-Module RelaxedIT.Update
+
 RelaxedIT.Resources.OneclickInstall
 
 write-relaxedlog -logtext "Change ""C:\ProgramData\RelaxedIT\azlog.json"" with your own log-settings!"

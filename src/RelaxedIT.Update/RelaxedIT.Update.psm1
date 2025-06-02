@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.65"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.66"
 }
 
 function RelaxedIT.Update.All {
@@ -18,7 +18,7 @@ function RelaxedIT.Update.All {
         }
     }
 
-    Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
+    #Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
     
     #Fallback to install and update
     Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog")
@@ -111,7 +111,8 @@ function RelaxedIT.Resources.OneclickInstall {
         [string]$Scope = "AllUsers"
     )
     RelaxedIT.Resources.Install
-    pwsh -c Realxedit.Update.Task
+    pwsh -c RelaxedIT.Update.All
+    pwsh -c Relaxedit.Update.Task
     pwsh -c RelaxedIT.Update.Task.Install
 }
 
