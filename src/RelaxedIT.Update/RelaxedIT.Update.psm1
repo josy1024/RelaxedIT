@@ -2,7 +2,7 @@
 
 
 function Test-RelaxedIT.Update {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.67"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.68"
 }
 
 function RelaxedIT.Update.All {
@@ -257,5 +257,6 @@ Function Update-RelaxedITModuleAndRemoveOld {
             Write-RelaxedIT -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
+        Import-Module -Name $ModuleName -Force -Scope AllUsers -AllowClobber
     }
 }

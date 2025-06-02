@@ -78,7 +78,7 @@
             $entity.ramGB = $ramGB
             $entity.cpu = $cpu_info | convertto-json
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
-            $entity.SoftwareOutdated = RelaxedIT.chocolist 
+            $entity.SoftwareOutdated = RelaxedIT.chocolist -ErrorAction SilentlyContinue
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Update-AzTableRow -table $table -entity $entity
             if ($retadd.HttpStatuscode -eq 204)
