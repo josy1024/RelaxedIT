@@ -238,7 +238,10 @@ function RelaxedIT.Install.All {
         }
     }
 
-    Install-Module -Name "RelaxedIT*" -Force -Scope $Scope
+    Install-Module -Name "RelaxedIT" -Force -Scope $Scope
+    Install-Module -Name "RelaxedIT.Update" -Force -Scope $Scope
+
+    #Install-Module -Name "RelaxedIT*" -Force -Scope $Scope
     
     Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
 }
@@ -263,6 +266,6 @@ Function Update-RelaxedITModuleAndRemoveOld {
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
         #Import-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
-        import-module -name "RelaxedIT" -Force -Scope Global
+        Import-module -name  $ModuleName -Force -Scope Global
     }
 }
