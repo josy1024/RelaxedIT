@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT.Update.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.78'
+ModuleVersion = '0.0.79'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()

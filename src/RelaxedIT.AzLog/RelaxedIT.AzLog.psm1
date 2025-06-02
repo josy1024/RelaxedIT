@@ -90,6 +90,7 @@
             {
                 Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red 
             }
+            Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
             return $retadd
         }
         catch {
