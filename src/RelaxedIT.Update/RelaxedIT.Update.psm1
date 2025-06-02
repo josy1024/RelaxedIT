@@ -10,7 +10,7 @@ function RelaxedIT.Update.All {
         [string]$Scope = "AllUsers"
     )
 
-    if ($Scope = "AllUsers")
+    if ($Scope -eq "AllUsers")
     {
         if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
             Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
@@ -252,7 +252,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
         Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName""" 
         
         # Install or update the module
-        Install-Module -Name $ModuleName -Force -Scope AllUsers -AllowClobber
+        Install-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
 
         # Retrieve the latest version
         $LatestVersion = (Get-InstalledModule -Name $ModuleName).Version
@@ -262,6 +262,7 @@ Function Update-RelaxedITModuleAndRemoveOld {
             Write-RelaxedIT -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
             Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
         }
-        Import-Module -Name $ModuleName -Force -Scope AllUsers -AllowClobber
+        #Import-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
+        import-module -name "RelaxedIT" -Force -Scope Global
     }
 }
