@@ -19,7 +19,7 @@ function RelaxedIT.Update.All {
     }
 
     #Update-Module -Name "RelaxedIT*" -Force -Scope AllUsers
-    
+
     #Fallback to install and update
     Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog", "RelaxedIT.3rdparty")
 
@@ -80,7 +80,7 @@ function RelaxedIT.Resources.Install {
     # Define the modules to check and install
     $modules = @("Az.Resources", "Az.Storage", "AzTable", "PSWindowsUpdate")
 
-    
+
 
     foreach ($module in $modules) {
         # Check if the module is installed
@@ -96,7 +96,7 @@ function RelaxedIT.Resources.Install {
     {
         Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
     }
-    
+
     # TODO: test pwsh7 installed or pwsh7 shell?
     if (!(test-path -path "C:\Program Files\PowerShell\7\pwsh.exe"))
     {
@@ -105,7 +105,7 @@ function RelaxedIT.Resources.Install {
 
 }
 # https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-how-to-use-powershell
-	
+
 function RelaxedIT.Resources.OneclickInstall {
     param (
         [string]$Scope = "AllUsers"
@@ -120,7 +120,7 @@ function RelaxedIT.Update.Task {
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json",
         [int]$writemode = 1,
-        [int]$maxhours = 168
+        [int]$maxhours = 72
     )
 
 
@@ -134,7 +134,7 @@ function RelaxedIT.Update.Task {
     catch {
         Write-RelaxedIT -logtext ("# RelaxedIT.Update.All(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
+    }
 
     try {
         Write-RelaxedIT -logtext "RelaxedIT.Resources.Install"
@@ -143,7 +143,7 @@ function RelaxedIT.Update.Task {
     catch {
         Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
+    }
 
     try {
         Write-RelaxedIT -logtext "Update.Task"
@@ -162,7 +162,7 @@ function RelaxedIT.Update.Task {
     catch {
         Write-RelaxedIT -logtext ("# Ping (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
+    }
 
     try {
         #RelaxedIT.3rdParty.upgrade
@@ -171,7 +171,7 @@ function RelaxedIT.Update.Task {
     catch {
         Write-RelaxedIT -logtext ("#     RelaxedIT.3rdParty.upgrade(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-    }    
+    }
 
 
     # Update the timestamp
@@ -200,28 +200,28 @@ function RelaxedIT.Update.Task.Install {
     $taskCommand = "pwsh.exe"
     $taskArguments = "-NoProfile -ExecutionPolicy Bypass -Command RelaxedIT.Update.Task"
     $taskTriggerTime = "00:20PM"  # Example: Set to run at 3:00 AM
-    
+
     # Create a daily trigger
     $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date $taskTriggerTime)
-    
+
     # Create a reboot trigger with a random delay of up to 1 hour
     $rebootTrigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Minutes 60)
 
     # Create an action to run the PowerShell command
     $action = New-ScheduledTaskAction -Execute $taskCommand -Argument $taskArguments
-    
+
     # (Optional) Set up the task to run with highest privileges (admin rights)
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
         -StartWhenAvailable -RunOnlyIfNetworkAvailable -DontStopOnIdleEnd `
         -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 1)
-    
+
     # Register the scheduled task
     Register-ScheduledTask -TaskName $taskName -Description $taskDescription `
         -Trigger $trigger,$rebootTrigger -Action $action -Settings $settings `
         -User "SYSTEM" -RunLevel Highest
-    
+
     Write-RelaxedIT -logtext  "Scheduled task '$taskName' has been successfully created."
-    
+
 }
 # Define the scheduled task name and other parameters
 
@@ -242,7 +242,7 @@ function RelaxedIT.Install.All {
     Install-Module -Name "RelaxedIT.Update" -Force -Scope $Scope
 
     #Install-Module -Name "RelaxedIT*" -Force -Scope $Scope
-    
+
     Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
 }
 
@@ -252,8 +252,8 @@ Function Update-RelaxedITModuleAndRemoveOld {
     )
 
     foreach ($ModuleName in $ModuleNames) {
-        Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName""" 
-        
+        Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName"""
+
         # Install or update the module
         Install-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
 

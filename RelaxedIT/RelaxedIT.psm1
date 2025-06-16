@@ -1,8 +1,9 @@
 ﻿
 function Test-RelaxedIT
 {
-    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: 0.0.75 :-)")
-    
+    $ver = "0.0.81"
+    write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: $ver :-)")
+    return $ver
 }
 
 function Get-ColorText {
@@ -55,10 +56,10 @@ function Get-ColorText {
         $text = [regex]::Replace($text, $digitPattern, {param($match) "`e[35m$($match.Value)`e[0m"})  # DarkMagenta
         $text = [regex]::Replace($text, $varPattern, {param($match) "`e[93m$($match.Value)`e[0m"}) # @variablename
         $text = [regex]::Replace($text, $quotePattern, {param($match) "`e[96m$($match.Value)`e[0m"})  # Cyan
-        $text = [regex]::Replace($text, $bluePattern, {param($match) "`e[34m$($match.Value)`e[0m"})  # blue 
+        $text = [regex]::Replace($text, $bluePattern, {param($match) "`e[34m$($match.Value)`e[0m"})  # blue
         $text = [regex]::Replace($text, $redPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
         $text = [regex]::Replace($text, $keywordPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
-        
+
     }
     catch {
         write-host "Get-ColorText ERROR: $text" -ForegroundColor Red
@@ -80,7 +81,7 @@ function Get-RelaxedITConfig {
         Specify a URI to a help page, this will show when Get-Help -Online is used.
     .EXAMPLE
         # $config = Get-RelaxedITConfig -match "2" -config .\mandant.json
-        # $config.ConfigValue    
+        # $config.ConfigValue
     #>
     param (
         [String]$config="config.json",
@@ -138,7 +139,7 @@ function Write-RelaxedIT
 
     write-host (Get-ColorText -text $logtext) -NoNewline:$noNewline
 
-    
+
     # Überprüfen der Umgebungsvariable "relaxedlog"
     $relaxedlog = Get-EnvVar -name "relaxedlog"
 
@@ -148,18 +149,18 @@ function Write-RelaxedIT
         # logPath = "$logfilepath\$psscript.log"
         $logfilepath = $logfilepath -replace "default.log",  $psscript
         Set-EnvVar -name "relaxedlog" -value $logfilepath
-        $baseDirectory = Split-Path -Path $logfilepath    
+        $baseDirectory = Split-Path -Path $logfilepath
 
         if (-not (Test-Path -Path $baseDirectory)) {
             New-Item -ItemType Directory -Path $baseDirectory -Force | Out-Null
             Write-Host "Base directory created: $baseDirectory"
-        } 
+        }
     }
 
     if ($relaxedlog -ne "nolog") {
         # Logtext in die Datei schreiben
         try {
-            Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext) 
+            Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext)
         }
         catch {
             $errortext = "[ERR]: `$logfilepath = ""$logfilepath"", `$relaxedlog = ""$relaxedlog"", `$baseDirectory = ""$baseDirectory"""
@@ -168,7 +169,7 @@ function Write-RelaxedIT
     }
 }
 
-Function Get-LogDateString 
+Function Get-LogDateString
 {
 	[CmdletBinding()]
 	param (
@@ -179,13 +180,13 @@ Function Get-LogDateString
 	.SYNOPSIS
 		#GET-LogDateString #get-date
 	.DESCRIPTION
-		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
+		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück
 	#>
 	return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
 }
 
 
-Function Get-LogDateFileString 
+Function Get-LogDateFileString
 {
 	[CmdletBinding()]
 	param (
@@ -196,7 +197,7 @@ Function Get-LogDateFileString
 	.SYNOPSIS
 		#GET-LogDateString #get-date
 	.DESCRIPTION
-		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück 
+		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück
 	#>
 	return ([datetime]::UtcNow).toString("yyyy-MM-dd___HHmm_ss_U\tc")
 }

@@ -5,8 +5,8 @@
         [string]$action = "",
         [string]$sasToken = "# initial"
     )
-   
-    
+
+
     if (!(test-path -path $config ))
     {   $base = (Get-Module RelaxedIT.AzLog).ModuleBase
         Test-AndCreatePath -Path (Get-BasePath -Path $config)
@@ -26,7 +26,7 @@
     set-envvar -name "RelaxedIT.AzLog.tableName" -value (Get-RelaxedITConfig -config $config).tableName
 
     $tableName = (Get-EnvVar -name "RelaxedIT.AzLog.tableName")
-    
+
     if ((Get-EnvVar -name "RelaxedIT.AzLog.sasToken").startswith("#"))
     {
         Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: CONFIG: open azure cloud shell and create sys keys for table ""$tableName""!"
@@ -39,13 +39,14 @@
         $biosVersion = (Get-WmiObject -Class Win32_BIOS).SMBIOSBIOSVersion
         $manufacturer = (Get-WmiObject -Class Win32_ComputerSystem).Manufacturer
         $model = (Get-WmiObject -Class Win32_ComputerSystem).Model
-        
+        $relaxedver = Test-RelaxedIT
+
         $cpu_info = Get-WmiObject -Class Win32_Processor | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
 
         # Get RAM information
         $ram_info = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
         $ramGB = $([math]::round($ram_info.Sum / 1GB, 2))
-        
+
         Import-Module PSWindowsUpdate
 
         # Alle verfügbaren Updates anzeigen
@@ -66,7 +67,7 @@
 
         # Step 2: Modify the entity
         try {
-            $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"      
+            $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
             $entity.action = $action
             $entity.displayVersion = $displayVersion
             $entity.productName = $productName
@@ -79,16 +80,17 @@
             $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
             $entity.SoftwareOutdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
             $entity.PingTimeUTC = Get-LogDateFileString
+            $entity.version = $relaxedver
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
 
             $retadd = Update-AzTableRow -table $table -entity $entity
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green 
+                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red 
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
             }
             Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
             return $retadd
@@ -129,6 +131,7 @@
                 model = $model
                 ramGB = $ramGB
                 cpu = ($cpu_info | convertto-json)
+                version = $relaxedver
                 pendingdrivers =  $pendingdrivers
                 SoftwareOutdated = (RelaxedIT.3rdParty.chocolist)
             }
@@ -136,11 +139,11 @@
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK"  -noWriteDate -ForegroundColor Green 
+                Write-RelaxedIT -logtext "OK"  -noWriteDate -ForegroundColor Green
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Green 
+                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Green
             }
             Write-RelaxedIT -LogText ($prop | Out-String) -ForegroundColor Yellow
             return $retadd

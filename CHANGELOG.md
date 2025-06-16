@@ -13,6 +13,10 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.81] - 2025-06-16
+
+* 0.0.82 version logging to azlog, make faster maxhours skip TTL to 72h
+
 ## [0.0.78] - 2025-06-02
 
 * 0.0.7* fixes
@@ -24,7 +28,7 @@ missing version numbers are for refactoring, tests and code optimisations.
 
 ## [0.0.64] - 2025-05-21
 
-* 0.0.64 Fixes, Fixes, Fixes 
+* 0.0.64 Fixes, Fixes, Fixes
 * 0.0.62 New: Write-RelaxedIT params $noNewline $noWriteDate
 * 0.0.61 Fixes, Fixes, optimizes in outputs debugs
 * 0.0.58 New: skip state in azlog
