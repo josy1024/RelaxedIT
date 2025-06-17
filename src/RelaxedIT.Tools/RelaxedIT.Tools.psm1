@@ -58,7 +58,7 @@ function Update-InFileContent {
     }
 
     # Read the content of the file
-    $Content = Get-Content -Path $FilePath 
+    $Content = Get-Content -Path $FilePath
 
     # Replace the specified text
     $UpdatedContent = $Content -replace [regex]::Escape($OldText), $NewText

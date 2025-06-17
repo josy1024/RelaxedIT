@@ -61,26 +61,45 @@
     }
     try {
         $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
+
+        if (-not $storageAccountName) {
+            throw "Missing storage account name"
+        }
         #$sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
         $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
         $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
-
+        $outdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
         # Step 2: Modify the entity
         try {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
-            $entity.action = $action
-            $entity.displayVersion = $displayVersion
-            $entity.productName = $productName
-            $entity.currentBuildNumber = $currentBuildNumber
-            $entity.biosVersion = $biosVersion
-            $entity.manufacturer = $manufacturer
-            $entity.model = $model
-            $entity.ramGB = $ramGB
-            $entity.cpu = $cpu_info | convertto-json
-            $entity.pendingdrivers =  $pendingdrivers # $pendingdrivers | convertto-json
-            $entity.SoftwareOutdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
-            $entity.PingTimeUTC = Get-LogDateFileString
-            $entity.version = $relaxedver
+
+                        # Define expected properties and their values
+            $expectedProps = @{
+                action = $action
+                displayVersion = $displayVersion
+                productName = $productName
+                currentBuildNumber = $currentBuildNumber
+                biosVersion = $biosVersion
+                manufacturer = $manufacturer
+                model = $model
+                ramGB = $ramGB
+                cpu = ($cpu_info | ConvertTo-Json)
+                version = $relaxedver
+                pendingdrivers = $pendingdrivers
+                SoftwareOutdated = $outdated
+                PingTimeUTC = Get-LogDateFileString
+            }
+
+            # Ensure all properties exist on the entity
+            foreach ($key in $expectedProps.Keys) {
+                if (-not $entity.PSObject.Properties[$key]) {
+                    Write-RelaxedIT -logtext ("Update-AzTableRow Prop Update: $key : " + $expectedProps[$key])
+                    Add-Member -InputObject $entity -NotePropertyName $key -NotePropertyValue $expectedProps[$key]
+                } else {
+                    $entity.$key = $expectedProps[$key]
+                }
+            }
+
             Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
 
             $retadd = Update-AzTableRow -table $table -entity $entity
@@ -96,10 +115,10 @@
             return $retadd
         }
         catch {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found" #TODO: FIX remove maybe not needed?!?!
+            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found try update!" #TODO: FIX remove maybe not needed?!?!
             try {
-                    $retadd = Update-AzTableRow -table $table -entity $entity
-
+                Write-RelaxedIT -logtext "Update: Add-AzTableRow ""$table"" $action" -NoNewline
+                $retadd = Update-AzTableRow -table $table -entity $entity
                 }
             catch {
                 $entity | Remove-AzTableRow -Table $table
@@ -119,6 +138,7 @@
 
     if ($tryinsert)
     {
+        Write-RelaxedIT -logtext ("AzLog: Tryinsert! ") -ForegroundColor red
         try {
             $prop = @{
                 PingTimeUTC = (Get-LogDateFileString)
@@ -135,7 +155,7 @@
                 pendingdrivers =  $pendingdrivers
                 SoftwareOutdated = (RelaxedIT.3rdParty.chocolist)
             }
-            Write-RelaxedIT -logtext "Add-AzTableRow ""$table"" $action" -NoNewline
+            Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {

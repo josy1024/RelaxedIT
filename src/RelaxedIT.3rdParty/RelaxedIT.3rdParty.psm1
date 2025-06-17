@@ -3,8 +3,8 @@
         [string]$config = "C:\ProgramData\RelaxedIT\3rdParty.json",
          [string]$uninstallConfig = "C:\ProgramData\RelaxedIT\3rdPartyUninstallPrograms.json"
     )
-   
-    
+
+
     #enable Optional Windows Updates
 
     try {
@@ -15,7 +15,7 @@
        # Set the registry values
        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "AllowOptionalContent" -Value 2 -Type DWord
        Set-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\WindowsUpdate" -Name "SetAllowOptionalContent" -Value 2 -Type DWord
-       
+
         # Delete the 'ExcludeWUDriversInQualityUpdate' value
         Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "ExcludeWUDriversInQualityUpdate" -ErrorAction SilentlyContinue
 
@@ -45,11 +45,11 @@
             Write-RelaxedIT "[ERR] No programs defined in the uninstall configuration file ""$uninstallConfig""."
             return
         }
-    
+
         # Loop through each program and uninstall
         foreach ($program in $uninstallList) {
             $id = $program.id
-    
+
             if ($id) {
                 Write-RelaxedIT "[Uninstalling]: ""$id"""
                 & "C:\ProgramData\chocolatey\choco.exe" uninstall -y $id
@@ -95,12 +95,12 @@
     }
 
 
-    # error handling for untested apps 
+    # error handling for untested apps
     # Write-RelaxedIT "[Upgrading]: upgrading all ..."
     # & "C:\ProgramData\chocolatey\choco.exe" upgrade -y $id
     # winget upgrade --all --include-unknown -i
     # winget upgrade $package --include-unknown --silent --accept-source-agreements --accept-package-agreements  --uninstall-previous
-    # 
+    #
 
     #clean desktop from shortcuts
     Get-ChildItem -Path "C:\Users\Public\Desktop" -Filter "*.lnk" | foreach-object {
@@ -113,8 +113,8 @@ function RelaxedIT.3rdParty.chocolist {
         [string]$returnformat = "json"
     )
 
-    # Get the list of outdated programs once 
-    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output 
+    # Get the list of outdated programs once
+    $outdatedPrograms = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output
     $outdatedData = $outdatedPrograms | ConvertFrom-Csv -Delimiter '|' -Header packagename,currentversion,availableversion,pinned
 
     if ($returnformat -eq "json")
@@ -133,8 +133,8 @@ function RelaxedIT.3rdParty.WindowsDrivers {
         [string]$config = "C:\ProgramData\RelaxedIT\3rdParty.json",
           [string]$category ="Drivers"
     )
-   
-        
+
+
     # Modul importieren
     Import-Module PSWindowsUpdate
 
@@ -144,7 +144,7 @@ function RelaxedIT.3rdParty.WindowsDrivers {
 
     # Alle Updates automatisch installieren und ggf. neu starten
     Install-WindowsUpdate -AcceptAll -IgnoreReboot -Category $category
-     
+
 
 }
 
