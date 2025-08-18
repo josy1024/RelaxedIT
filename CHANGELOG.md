@@ -13,6 +13,11 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.84] - 2025-08-18
+
+* 0.0.84 Fix: Productname W11 Recognition
+* 0.0.84 Optimize: Date-Outputs in Write-RelaxedIT
+
 ## [0.0.83] - 2025-06-17
 
 * 0.0.83 fixes and error handling on azlog

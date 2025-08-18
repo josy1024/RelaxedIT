@@ -34,7 +34,9 @@
     }
     try {
         $displayVersion = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion
-        $productName = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductName
+        #$productName = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductName
+        $productName = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption
+
         $currentBuildNumber = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').CurrentBuildNumber
         $biosVersion = (Get-WmiObject -Class Win32_BIOS).SMBIOSBIOSVersion
         $manufacturer = (Get-WmiObject -Class Win32_ComputerSystem).Manufacturer

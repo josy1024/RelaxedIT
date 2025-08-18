@@ -134,7 +134,22 @@ function Write-RelaxedIT
     )
 
     if (!($noWriteDate))
-    {   write-host ("" + (Get-LogDateString) + " " ) -ForegroundColor darkgray -NoNewline
+    {   
+
+        $envVarName = "LogDateStringEnv"
+		$CurrentHour = [datetime]::UtcNow.ToString("yyyyMM.dd___HH")
+		$StoredHour = [Environment]::GetEnvironmentVariable($envVarName, "Process")
+
+		if ($StoredHour -ne $CurrentHour) {
+		   # New hour: write full date and update env var
+		   $dateString = (GET-LogDateString) + " "
+		   [Environment]::SetEnvironmentVariable($envVarName, $CurrentHour, "Process")
+		} else {
+		   # Same hour: write only time
+		   $dateString = [datetime]::UtcNow.ToString("HH:mm:ss U\tc") + " "
+		}
+        
+        write-host ("" + $dateString ) -ForegroundColor darkgray -NoNewline
     }
 
     write-host (Get-ColorText -text $logtext) -NoNewline:$noNewline
