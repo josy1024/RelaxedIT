@@ -180,6 +180,11 @@ function RelaxedIT.Update.Task {
     $ret = RelaxedIT.AzLog.Run.Ping -action "Done"
     Write-RelaxedIT "Task completed and timestamp updated."
 
+    # TODO driver updates
+    RelaxedIT.3rdParty.WindowsDrivers
+
+    # 3rd party updates!
+    #    RelaxedIT.3rdParty.Update
 }
 
 function RelaxedIT.Update.Task.Install {
