@@ -69,3 +69,71 @@ function Update-InFileContent {
     Write-RelaxedIT -logtext "Replaced ""$OldText"" with ""$NewText"" in ""$FilePath""" -ForegroundColor Green -level 2
 }
 
+
+Function Get-HwInfo
+{
+	<#
+
+	#>
+
+	[CmdletBinding(SupportsShouldProcess = $True)]
+	Param(
+		[Parameter(Mandatory = $False, Position = 1)]
+		[string[]]$ComputerName = $Env:COMPUTERNAME
+		)
+
+	$HWInfoArray = @()
+
+	foreach($Computer in $ComputerName)
+	{
+		Write-RelaxedIT -logtext "Query Hardware Infos for ""$Computer""..."
+
+		try
+		{
+			$ObjectOutput = "" | Select-Object ComputerName, BIOSVersion, SerialNumber, Manufacturer, Model, SystemFamily
+			$Win32_BIOS_Object = Get-WMIObject -Class Win32_BIOS -ComputerName $Computer -ErrorAction Stop
+			if($Computer -eq $Env:COMPUTERNAME)
+			{
+					$Win32_ComputerSystem_Object = Get-CimInstance -ClassName Win32_ComputerSystem
+			}
+			else
+			{
+				$Win32_ComputerSystem_Object = Get-CimInstance -ClassName Win32_ComputerSystem -ComputerName $Computer -ErrorAction Stop
+			}
+			$ObjectOutput.ComputerName = $Computer.ToUpper()
+			$ObjectOutput.BIOSVersion = $Win32_BIOS_Object.SMBIOSBIOSVersion
+			$ObjectOutput.SerialNumber = $Win32_BIOS_Object.SerialNumber
+			$ObjectOutput.Manufacturer = $Win32_ComputerSystem_Object.Manufacturer
+			$ObjectOutput.Model = $Win32_ComputerSystem_Object.Model
+			$ObjectOutput.SystemFamily = $Win32_ComputerSystem_Object.SystemFamily
+
+			$HWInfoArray += $ObjectOutput
+		}
+		catch
+		{
+			Write-RelaxedIT -logtext "Error while query bios version for ""$Computer""!" -Color Red
+		}
+	}
+
+    $HWInfoArray | Add-Member -MemberType NoteProperty -Name Key -Value $env:COMPUTERNAME
+
+    $cpu_info = Get-WmiObject -Class Win32_Processor | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors | convertto-json
+	$HWInfoArray | Add-Member -MemberType NoteProperty -Name CPUJSON -Value $cpu_info
+
+        # Get RAM information
+    $ram_info = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+    $ramGB = $([math]::round($ram_info.Sum / 1GB, 2))
+	$HWInfoArray | Add-Member -MemberType NoteProperty -Name RAM_GB -Value $ramGB
+
+	# OS details
+	$displayVersion = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion
+	$HWInfoArray | Add-Member -MemberType NoteProperty -Name displayVersion -Value $displayVersion
+
+	$productName = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption
+	$HWInfoArray | Add-Member -MemberType NoteProperty -Name productName -Value $productName
+
+	$currentBuildNumber = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').CurrentBuildNumber
+	$HWInfoArray | Add-Member -MemberType NoteProperty -Name currentBuildNumber -Value $currentBuildNumber
+
+	return $HWInfoArray
+}
