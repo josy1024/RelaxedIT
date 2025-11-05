@@ -1,7 +1,7 @@
 # RelaxedIT
 [![PSGallery Version](https://img.shields.io/powershellgallery/v/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Version)](https://www.powershellgallery.com/packages/RelaxedIT) [![PSGallery Downloads](https://img.shields.io/powershellgallery/dt/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Downloads)](https://www.powershellgallery.com/packages/RelaxedIT) [![PowerShell](https://img.shields.io/badge/PowerShell-5.1-blue?style=flat&logo=powershell)](https://www.powershellgallery.com/packages/RelaxedIT) [![PSGallery Platform](https://img.shields.io/powershellgallery/p/RelaxedIT.svg?style=flat&logo=powershell&label=PSGallery%20Platform)](https://www.powershellgallery.com/packages/RelaxedIT)
 
-This module contain Modules and cmdlets to Inventory Devices and Manage 3rd Party Apps 
+This module contain Modules and cmdlets to Inventory Devices and Manage 3rd Party Apps
 
 ## Table of Contents
 
@@ -40,7 +40,7 @@ Update-ModuleManifest -Path ./RelaxedIT/RelaxedIT.psd1 -ModuleVersion "0.0.3"
 
 
 
-Test-Modulemanifest -path ./RelaxedIT/RelaxedIT.psd1  
+Test-Modulemanifest -path ./RelaxedIT/RelaxedIT.psd1
 
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
@@ -53,10 +53,10 @@ Publish-module -path ./RelaxedIT/ -Repository "PSGallery" -Nugetapikey $key
 $module="RelaxedIT"
 $submodule="3rdParty"
 mkdir ./src/$module.$submodule/
-New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1 
+New-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -Author "Josef Lahmer" -Description "relaxed IT $submodule" -RootModule RelaxedIT.$submodule.psm1 -ModuleVersion 0.0.1
 
 Write-RelaxedIT -LogText  "# $module.$submodule" | out-file -path  ./src/$module.$submodule/$module.$submodule.psm1 -append
-Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -LicenseUri 'https://github.com/josy1024/RelaxedIT/blob/main/LICENSE' 
+Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -LicenseUri 'https://github.com/josy1024/RelaxedIT/blob/main/LICENSE'
 Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -ProjectUri 'https://github.com/josy1024/RelaxedIT'
 Update-ModuleManifest -path ./src/$module.$submodule/$module.$submodule.psd1 -IconUri 'https://raw.githubusercontent.com/josy1024/RelaxedIT/refs/heads/main/img/logo.png'
 
@@ -67,3 +67,8 @@ Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
 
 ## TESTING
 
+## Debug
+* just use function similary
+```powershell
+    New-Alias -Name "write-relaxedit" -value "write-host"
+```
