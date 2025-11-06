@@ -13,6 +13,10 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.85] - 2025-08-18
+
+* 0.0.85 Feature: Get-HwInfo
+
 ## [0.0.84] - 2025-08-18
 
 * 0.0.84 Fix: Productname W11 Recognition
