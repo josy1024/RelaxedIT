@@ -1,2 +1,3 @@
 vars.ps1
 *.env.ps1
+debug.log

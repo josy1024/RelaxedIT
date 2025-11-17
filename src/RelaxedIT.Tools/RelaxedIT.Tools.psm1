@@ -221,3 +221,177 @@ Function Get-HwInfo
 
     return $HWInfoArray
 }
+
+function Convert-IpRangeToCidr {
+    param(
+        [Parameter(Mandatory=$true)][string]$StartIP,
+        [Parameter(Mandatory=$true)][string]$EndIP
+    )
+
+    # Convert IPv4 to UInt32
+    function IPToUInt32([string]$ip) {
+        $bytes = [System.Net.IPAddress]::Parse($ip).GetAddressBytes()
+        [Array]::Reverse($bytes) # little-endian to match UInt32
+        return [BitConverter]::ToUInt32($bytes,0)
+    }
+
+    # Convert UInt32 to IPv4 string
+    function UInt32ToIP([uint32]$int) {
+        $bytes = [BitConverter]::GetBytes($int)
+        [Array]::Reverse($bytes)
+        return ([System.Net.IPAddress]::new($bytes)).ToString()
+    }
+
+    # Count trailing zero bits (0..32)
+    function GetTrailingZeroCount([uint32]$value) {
+        if ($value -eq 0) { return 32 }
+        $count = 0
+        while ((($value -shr $count) -band 1) -eq 0) { $count++ }
+        return $count
+    }
+
+    # Highest power-of-two <= n, returns exponent (log2)
+    function FloorLog2([uint64]$n) {
+        $k = 0
+        while ((1 -shl ($k+1)) -le $n) { $k++ }
+        return $k
+    }
+
+    $start = IPToUInt32 $StartIP
+    $end   = IPToUInt32 $EndIP
+
+    if ($start -gt $end) { throw "StartIP must be <= EndIP." }
+
+    $cidrs = @()
+
+    while ($start -le $end) {
+        # Alignment-constrained prefix
+        $tz = GetTrailingZeroCount $start           # alignment in bits
+        $prefixAlign = 32 - $tz
+
+        # Remaining-size-constrained prefix
+        $remaining = [uint64]($end - $start + 1)
+        $exp = FloorLog2 $remaining                 # block size exponent
+        $prefixSize = 32 - [int]$exp
+
+        # Take the stricter (larger) prefix length
+        $prefix = [Math]::Max($prefixAlign, $prefixSize)
+
+        # Emit block
+        $cidrs += "$(UInt32ToIP $start)/$prefix"
+
+        # Advance by block size
+        $blockSize = [uint32](1 -shl (32 - $prefix))
+        $start = $start + $blockSize
+    }
+
+    return $cidrs
+}
+
+function New-AustriaFirewallRules {
+<#
+.SYNOPSIS
+Creates Windows Firewall rules to allow the Minecraft Bedrock Server.
+
+.PARAMETER Name
+The base name for the firewall rules (e.g., "Minecraft").
+
+.PARAMETER MinecraftExePath
+The full path to the server executable file.
+
+.EXAMPLE
+    New-MinecraftFirewallRules -Name "BedrockServer" -MinecraftExePath "D:\Servers\bedrock_server.etxe" -Ports 25565
+    New-MinecraftFirewallRules -Name "Minecraft" -MinecraftExePath "C:\MineCraft\bedrock-server-latest\bedrock_server.exe" -Ports @(19132, 19133)
+    New-MinecraftFirewallRules -Name "MinecraftJAVA" -MinecraftExePath "C:\MineCraft\java-server\bedrock_server.exe" -Ports @(25565, 25575, 19132, 19133)
+#>
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Name = "Minecraft",
+
+        [Parameter(Mandatory=$true)]
+        [string]$MinecraftExePath = "C:\MineCraft\bedrock-server\bedrock_server.exe",
+
+        [Parameter(Mandatory=$true)]
+        [int[]]$Ports = @(25565, 25575, 19132, 19133),
+        [Parameter(Mandatory=$false)]
+        [string]$ipfile ="at.csv"
+        # https://www.nirsoft.net/countryip/at.html
+    )
+
+
+    $AustriaIPs = @()
+    # Path to at.csv is assumed to be relative to where the script is run
+    $CsvPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) $ipfile
+
+    if (-not (Test-Path $CsvPath)) {
+        Write-RelaxedIT -logtext "ERROR: The required IP CSV file '$ipfile' was not found at '$CsvPath'. Returning without creating rules."
+        return
+    }
+
+    Import-Csv $CsvPath -Header StartIP,EndIP,Count,Date,Provider | ForEach-Object {
+        $AustriaIPs += Convert-IpRangeToCidr -StartIP $_.StartIP -EndIP $_.EndIP
+    }
+
+    Write-RelaxedIT -logtext "ℹ️ Found $($AustriaIPs.count) CIDR blocks for Austria IPs."
+
+    # Internal/private ranges (RFC1918)
+    $InternalIPs = @(
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16"
+    )
+
+    # Cleanup old rules
+    Write-RelaxedIT -logtext "Cleaning up old firewall rules prefixed with '$Name'..."
+    Get-NetFirewallRule -DisplayName "$Name Austria Public TCP" -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false
+    Get-NetFirewallRule -DisplayName "$Name Austria Public UDP" -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false
+    Get-NetFirewallRule -DisplayName "$Name Internal TCP" -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false
+    Get-NetFirewallRule -DisplayName "$Name Internal UDP" -ErrorAction SilentlyContinue | Remove-NetFirewallRule -Confirm:$false
+    Write-RelaxedIT -logtext "Cleanup complete."
+
+    # Austria rules (Public profile only)
+    Write-RelaxedIT -logtext "Adding rules for Public Profile (Austria IPs)..."
+    New-NetFirewallRule `
+        -DisplayName "$Name Austria Public TCP" `
+        -Direction Inbound `
+        -Program $MinecraftExePath `
+        -Action Allow `
+        -Profile Public `
+        -RemoteAddress $AustriaIPs `
+        -Protocol TCP `
+        -LocalPort $Ports
+
+    New-NetFirewallRule `
+        -DisplayName "$Name Austria Public UDP" `
+        -Direction Inbound `
+        -Program $MinecraftExePath `
+        -Action Allow `
+        -Profile Public `
+        -RemoteAddress $AustriaIPs `
+        -Protocol UDP `
+        -LocalPort $Ports
+
+    # Internal rules (Private + Domain profiles)
+    Write-RelaxedIT -logtext "Adding rules for Private/Domain Profiles (Internal IPs)..."
+    New-NetFirewallRule `
+        -DisplayName "$Name Internal TCP" `
+        -Direction Inbound `
+        -Program $MinecraftExePath `
+        -Action Allow `
+        -Profile Private,Domain `
+        -RemoteAddress $InternalIPs `
+        -Protocol TCP `
+        -LocalPort $Ports
+
+    New-NetFirewallRule `
+        -DisplayName "$Name Internal UDP" `
+        -Direction Inbound `
+        -Program $MinecraftExePath `
+        -Action Allow `
+        -Profile Private,Domain `
+        -RemoteAddress $InternalIPs `
+        -Protocol UDP `
+        -LocalPort $Ports
+
+    Write-RelaxedIT -logtext "✅ Firewall rules for $Name Server created successfully for ports $($Ports -join ', ')."
+}
