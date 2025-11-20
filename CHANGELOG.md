@@ -13,6 +13,10 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.87] - 2025-11-20
+
+* 0.0.87 New Feature: Out-NetworkTestPretty
+
 ## [0.0.86] - 2025-11-17
 
 * 0.0.86 New Feature: Convert-IpRangeToCidr, New-AustriaFirewallRules

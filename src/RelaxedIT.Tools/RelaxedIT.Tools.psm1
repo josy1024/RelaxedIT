@@ -395,3 +395,64 @@ The full path to the server executable file.
 
     Write-RelaxedIT -logtext "✅ Firewall rules for $Name Server created successfully for ports $($Ports -join ', ')."
 }
+
+function Out-NetworkTestPretty {
+    param (
+        # The input object is the hostname/IP string
+        [Parameter(ValueFromPipeline=$true)]
+        [string]$Target,
+
+        # Switch to force IPv6 test for hostnames or addresses
+        [switch]$IPv6
+    )
+
+    # "172.17.17.17"  | Out-NetworkTestPretty
+    # Error handling for empty input
+    if (-not $Target) {
+        return
+    }
+
+    # Set parameters for Test-Connection
+    $TestParams = @{
+        Count = 1
+        ErrorAction = 'SilentlyContinue'
+        TimeoutSeconds = 1
+    }
+
+    # Add -IPv6 if the switch is present
+    if ($IPv6) {
+        $TestParams.Add('IPv6', $true)
+    }
+
+    # Perform the test, using -ComputerName instead of -Destination
+    $PingResult = Test-Connection -ComputerName $Target @TestParams
+
+    # Status determination (Check if any reply was received)
+    if ($PingResult) {
+        # Test-Connection returns an array of PingReply objects (even for -Count 1)
+        # We need the first element's status/properties
+        $FirstReply = $PingResult | Select-Object -First 1
+
+        if ($FirstReply.Status -eq 'Success') {
+            $Status = "OK"
+            $Latency = "$($FirstReply.Latency)ms"
+            # Use the resolved IP if available, otherwise the target name
+            $Address = $FirstReply.Address.IPAddressToString -or $Target
+        } else {
+            # Test-Connection ran but failed (e.g., 'TimedOut', 'DestinationHostUnreachable')
+            $Status = "DOWN (Status: $($FirstReply.Status))"
+            if ($IPv6) {
+            $Status += " ipv6"
+            }
+            $Latency = ""
+            $Address = $Target # Use the original target name
+        }
+    } else {
+        # No object was returned (Test-Connection failed completely/SilentlyContinue)
+        $Status = "DOWN (No Response)"
+        $Latency = ""
+        $Address = $Target # Use the original target name
+    }
+
+    Write-RelaxedIT "  $Target $Address Status: $Status $Latency"
+}

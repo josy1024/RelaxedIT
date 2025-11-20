@@ -42,7 +42,7 @@ function Get-ColorText {
     $BracketPattern = '\[.*?\]'
     $bluePattern = '(?i)\b(true|false|null|DBNull)\b'
     $redPattern = '\b\!\b' # red match !
-    $keywordPattern = '\b(BUG|ERR|WARN|WRN|INF|DEBUG|TRACE|TODO)\b'
+    $keywordPattern = '\b(BUG|ERR|WARN|WRN|INF|DEBUG|TRACE|TODO|DOWN)\b'
 
 
     # Replace patterns with colored text
@@ -134,7 +134,7 @@ function Write-RelaxedIT
     )
 
     if (!($noWriteDate))
-    {   
+    {
 
         $envVarName = "LogDateStringEnv"
 		$CurrentHour = [datetime]::UtcNow.ToString("yyyyMM.dd___HH")
@@ -148,7 +148,7 @@ function Write-RelaxedIT
 		   # Same hour: write only time
 		   $dateString = [datetime]::UtcNow.ToString("HH:mm:ss U\tc") + " "
 		}
-        
+
         write-host ("" + $dateString ) -ForegroundColor darkgray -NoNewline
     }
 
