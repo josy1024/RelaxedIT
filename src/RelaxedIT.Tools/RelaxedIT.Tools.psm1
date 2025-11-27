@@ -10,12 +10,16 @@
 }
 
 
+
 function Start-ElevatedPwsh {
-    # Check if the current session is running as Administrator
-    if (-Not ([Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
+    # Prüfen, ob die aktuelle Sitzung als Administrator läuft
+    $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
+
+    if (-not ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
         Write-RelaxedIT -logtext "Starting an elevated PowerShell session..." -ForegroundColor Yellow
 
-        # Start an elevated PowerShell session (empty)
+        # Starte eine erhöhte PowerShell-Sitzung
         Start-Process -FilePath "pwsh.exe" -Verb RunAs
 
         Write-RelaxedIT -logtext "An elevated PowerShell session has been started." -ForegroundColor Green
@@ -23,6 +27,27 @@ function Start-ElevatedPwsh {
         Write-RelaxedIT -logtext "This session is already running with Administrator privileges." -ForegroundColor Cyan
     }
 }
+
+
+function Start-Adminpwsh {
+    param(
+        [string]$Workspace = (Get-Location).Path,
+        [switch]$NoProfile,
+        [string[]]$ExtraArgs
+    )
+
+    # Prepare argument list
+    $argList = @()
+    if ($NoProfile) { $argList += '-NoProfile' }
+    if ($ExtraArgs) { $argList += $ExtraArgs }
+
+    Write-RelaxedIT -logtext "Starting elevated PowerShell in workspace '$Workspace'..." -ForegroundColor Yellow
+
+    Start-Process -FilePath "pwsh.exe" -Verb RunAs -WorkingDirectory $Workspace -ArgumentList $argList
+
+    Write-RelaxedIT -logtext "Elevated PowerShell started." -ForegroundColor Green
+}
+
 
 function Test-AndCreatePath {
     param (

@@ -3,7 +3,7 @@
 param (
     [Parameter()]
     [string]
-    $nextversion="0.0.88",
+    $nextversion="0.0.90",
     [int]$publish=99
 )
 function Get-NextFixVersion {
@@ -96,13 +96,13 @@ $functionsToExport = Get-AllFunctions -path "./$module/$module.psm1"
 Update-ModuleManifest -Path ./$module/$module.psd1 -FunctionsToExport $functionsToExport
 Update-ModuleManifest -Path ./$module/$module.psd1 -ModuleVersion $nextversion
 
-Test-Modulemanifest -path ./$module/$module.psd1  
+Test-Modulemanifest -path ./$module/$module.psd1
 
 $env:DOTNET_CLI_UI_LANGUAGE  = "en-US"
 $env:NUGET_CLI_LANGUAGE = "en-US"
 
 if ($publish -eq 1 -or $publish -eq 99) {
-    
+
     Publish-module -path ./$module/ -Repository "PSGallery" -Nugetapikey $key
 }
 
@@ -111,13 +111,13 @@ $submodules = @("Update", "EnergySaver", "Tools", "AzLog", "3rdParty")
 
 foreach ($submodule in $submodules) {
     Write-RelaxedIT -logtext "progress: ""$module.$submodule/$module.$submodule.psd1"" "
-    Update-InFileContent -FilePath "./src/$module.$submodule/$module.$submodule.psm1" -OldText 'Write-Host "' -NewText 'Write-RelaxedIT -logtext "' -ErrorAction SilentlyContinue 
-    $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"    
+    Update-InFileContent -FilePath "./src/$module.$submodule/$module.$submodule.psm1" -OldText 'Write-Host "' -NewText 'Write-RelaxedIT -logtext "' -ErrorAction SilentlyContinue
+    $functionsToExport = Get-AllFunctions -path "./src/$module.$submodule/$module.$submodule.psm1"
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -ModuleVersion $nextversion
     Update-ModuleManifest -Path ./src/$module.$submodule/$module.$submodule.psd1 -FunctionsToExport $functionsToExport
-    Update-VersionInScript -currentVersion $nextversion -filePath "./src/$module.$submodule/$module.$submodule.psm1" 
+    Update-VersionInScript -currentVersion $nextversion -filePath "./src/$module.$submodule/$module.$submodule.psm1"
 
-    $ret = Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1 
+    $ret = Test-Modulemanifest -path ./src/$module.$submodule/$module.$submodule.psd1
     Write-RelaxedIT -logtext "Test-Modulemanifest: RET: ""$ret"""
 
     if ($publish -ge 2 -or $publish -eq 99) {
