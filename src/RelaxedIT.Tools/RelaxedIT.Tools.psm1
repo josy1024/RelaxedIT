@@ -1,4 +1,5 @@
-﻿function Get-BasePath {
+﻿function Get-BasePath
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path
@@ -11,25 +12,30 @@
 
 
 
-function Start-ElevatedPwsh {
+function Start-ElevatedPwsh
+{
     # Prüfen, ob die aktuelle Sitzung als Administrator läuft
     $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
     $principal = New-Object Security.Principal.WindowsPrincipal($currentIdentity)
 
-    if (-not ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))) {
+    if (-not ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)))
+    {
         Write-RelaxedIT -logtext "Starting an elevated PowerShell session..." -ForegroundColor Yellow
 
         # Starte eine erhöhte PowerShell-Sitzung
         Start-Process -FilePath "pwsh.exe" -Verb RunAs
 
         Write-RelaxedIT -logtext "An elevated PowerShell session has been started." -ForegroundColor Green
-    } else {
+    }
+    else
+    {
         Write-RelaxedIT -logtext "This session is already running with Administrator privileges." -ForegroundColor Cyan
     }
 }
 
 
-function Start-Adminpwsh {
+function Start-Adminpwsh
+{
     param(
         [string]$Workspace = (Get-Location).Path,
         [switch]$NoProfile,
@@ -49,16 +55,20 @@ function Start-Adminpwsh {
 }
 
 
-function Test-AndCreatePath {
+function Test-AndCreatePath
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]$Path
     )
 
     # Check if the path exists
-    if (Test-Path -Path $Path) {
+    if (Test-Path -Path $Path)
+    {
         Write-RelaxedIT -logtext "Path '$Path' already exists." -ForegroundColor Green -level 3
-    } else {
+    }
+    else
+    {
         # Create the path
         Write-RelaxedIT -logtext "Path '$Path' does not exist. Creating it now..." -ForegroundColor Yellow
         New-Item -ItemType Directory -Path $Path | Out-Null
@@ -66,7 +76,8 @@ function Test-AndCreatePath {
     }
 }
 
-function Update-InFileContent {
+function Update-InFileContent
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]$FilePath,   # The file to modify
@@ -77,7 +88,8 @@ function Update-InFileContent {
     )
 
     # Check if file exists
-    if (-Not (Test-Path -Path $FilePath)) {
+    if (-Not (Test-Path -Path $FilePath))
+    {
         Write-RelaxedIT -logtext "[ERR] File not found: $FilePath" -ForegroundColor Red
         return
     }
@@ -114,11 +126,12 @@ Function Get-HwInfo
 
     $HWInfoArray = @()
 
-    foreach($Computer in $ComputerName)
+    foreach ($Computer in $ComputerName)
     {
         # Helper variable for conditional CIM calls (Splatting)
         $CimParams = @{ ErrorAction = 'Stop' }
-        if ($Computer -ne $Env:COMPUTERNAME) {
+        if ($Computer -ne $Env:COMPUTERNAME)
+        {
             $CimParams.Add('ComputerName', $Computer)
         }
 
@@ -132,18 +145,18 @@ Function Get-HwInfo
             $System = Get-CimInstance -ClassName Win32_ComputerSystem @CimParams
 
             $ObjectOutput = [PSCustomObject]@{
-                ComputerName       = $Computer.ToUpper()
-                BIOSVersion        = $BIOS.SMBIOSBIOSVersion
-                SerialNumber       = $BIOS.SerialNumber
-                Manufacturer       = $System.Manufacturer
-                Model              = $System.Model
-                SystemFamily       = $System.SystemFamily
+                ComputerName = $Computer.ToUpper()
+                BIOSVersion  = $BIOS.SMBIOSBIOSVersion
+                SerialNumber = $BIOS.SerialNumber
+                Manufacturer = $System.Manufacturer
+                Model        = $System.Model
+                SystemFamily = $System.SystemFamily
             }
 
             # --- 2. CPU Info ---
             $Processor = Get-CimInstance -ClassName Win32_Processor @CimParams |
-                         Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors |
-                         ConvertTo-Json -Compress
+            Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors |
+            ConvertTo-Json -Compress
 
             $ObjectOutput | Add-Member -MemberType NoteProperty -Name CPUJSON -Value $Processor
 
@@ -184,23 +197,27 @@ Function Get-HwInfo
             $totalSizeSum = 0
             $freeSizeSum = 0
 
-            foreach ($disk in $disks) {
+            foreach ($disk in $disks)
+            {
                 # Get the partitions on the current physical disk
                 $partitions = Get-CimInstance -ClassName Win32_DiskPartition @CimParams | Where-Object { $_.DiskIndex -eq $disk.Index }
 
-                foreach ($partition in $partitions) {
+                foreach ($partition in $partitions)
+                {
                     # Get the link between the partition and the logical disk (volume)
                     # Note: We can often use Get-CimAssociatedInstance here, but for simplicity
                     # we will stick to the WMI chaining logic, ensuring CIM is used.
                     $link = Get-CimInstance -ClassName Win32_LogicalDiskToPartition @CimParams |
-                            Where-Object { $_.Antecedent -like "*$($partition.DeviceID)*" }
+                    Where-Object { $_.Antecedent -like "*$($partition.DeviceID)*" }
 
-                    if ($link) {
+                    if ($link)
+                    {
                         # Extract drive letter (DeviceID property from Dependent string)
                         $driveLetter = ($link.Dependent -split '"')[1]
                         $logical = $logicalDisks | Where-Object { $_.DeviceID -eq $driveLetter }
 
-                        if ($logical) {
+                        if ($logical)
+                        {
                             $diskObj = [PSCustomObject]@{
                                 SerialNumber = $disk.SerialNumber
                                 DiskModel    = $disk.Model
@@ -233,7 +250,7 @@ Function Get-HwInfo
             # Add an object to the array indicating failure
             $ErrorObject = [PSCustomObject]@{
                 ComputerName = $Computer.ToUpper()
-                Status       = "Error: $($_.Exception.Message)"
+                Status = "Error: $($_.Exception.Message)"
                 # Ensure all expected properties are present
                 BIOSVersion = $null; SerialNumber = $null; Manufacturer = $null; Model = $null;
                 SystemFamily = $null; CPUJSON = $null; RAM_GB = $null; ProductName = $null;
@@ -247,28 +264,32 @@ Function Get-HwInfo
     return $HWInfoArray
 }
 
-function Convert-IpRangeToCidr {
+function Convert-IpRangeToCidr
+{
     param(
-        [Parameter(Mandatory=$true)][string]$StartIP,
-        [Parameter(Mandatory=$true)][string]$EndIP
+        [Parameter(Mandatory = $true)][string]$StartIP,
+        [Parameter(Mandatory = $true)][string]$EndIP
     )
 
     # Convert IPv4 to UInt32
-    function IPToUInt32([string]$ip) {
+    function IPToUInt32([string]$ip)
+    {
         $bytes = [System.Net.IPAddress]::Parse($ip).GetAddressBytes()
         [Array]::Reverse($bytes) # little-endian to match UInt32
-        return [BitConverter]::ToUInt32($bytes,0)
+        return [BitConverter]::ToUInt32($bytes, 0)
     }
 
     # Convert UInt32 to IPv4 string
-    function UInt32ToIP([uint32]$int) {
+    function UInt32ToIP([uint32]$int)
+    {
         $bytes = [BitConverter]::GetBytes($int)
         [Array]::Reverse($bytes)
         return ([System.Net.IPAddress]::new($bytes)).ToString()
     }
 
     # Count trailing zero bits (0..32)
-    function GetTrailingZeroCount([uint32]$value) {
+    function GetTrailingZeroCount([uint32]$value)
+    {
         if ($value -eq 0) { return 32 }
         $count = 0
         while ((($value -shr $count) -band 1) -eq 0) { $count++ }
@@ -276,20 +297,22 @@ function Convert-IpRangeToCidr {
     }
 
     # Highest power-of-two <= n, returns exponent (log2)
-    function FloorLog2([uint64]$n) {
+    function FloorLog2([uint64]$n)
+    {
         $k = 0
-        while ((1 -shl ($k+1)) -le $n) { $k++ }
+        while ((1 -shl ($k + 1)) -le $n) { $k++ }
         return $k
     }
 
     $start = IPToUInt32 $StartIP
-    $end   = IPToUInt32 $EndIP
+    $end = IPToUInt32 $EndIP
 
     if ($start -gt $end) { throw "StartIP must be <= EndIP." }
 
     $cidrs = @()
 
-    while ($start -le $end) {
+    while ($start -le $end)
+    {
         # Alignment-constrained prefix
         $tz = GetTrailingZeroCount $start           # alignment in bits
         $prefixAlign = 32 - $tz
@@ -313,8 +336,9 @@ function Convert-IpRangeToCidr {
     return $cidrs
 }
 
-function New-AustriaFirewallRules {
-<#
+function New-AustriaFirewallRules
+{
+    <#
 .SYNOPSIS
 Creates Windows Firewall rules to allow the Minecraft Bedrock Server.
 
@@ -330,16 +354,16 @@ The full path to the server executable file.
     New-MinecraftFirewallRules -Name "MinecraftJAVA" -MinecraftExePath "C:\MineCraft\java-server\bedrock_server.exe" -Ports @(25565, 25575, 19132, 19133)
 #>
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Name = "Minecraft",
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$MinecraftExePath = "C:\MineCraft\bedrock-server\bedrock_server.exe",
 
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [int[]]$Ports = @(25565, 25575, 19132, 19133),
-        [Parameter(Mandatory=$false)]
-        [string]$ipfile ="at.csv"
+        [Parameter(Mandatory = $false)]
+        [string]$ipfile = "at.csv"
         # https://www.nirsoft.net/countryip/at.html
     )
 
@@ -348,12 +372,13 @@ The full path to the server executable file.
     # Path to at.csv is assumed to be relative to where the script is run
     $CsvPath = Join-Path (Split-Path $MyInvocation.MyCommand.Path) $ipfile
 
-    if (-not (Test-Path $CsvPath)) {
+    if (-not (Test-Path $CsvPath))
+    {
         Write-RelaxedIT -logtext "ERROR: The required IP CSV file '$ipfile' was not found at '$CsvPath'. Returning without creating rules."
         return
     }
 
-    Import-Csv $CsvPath -Header StartIP,EndIP,Count,Date,Provider | ForEach-Object {
+    Import-Csv $CsvPath -Header StartIP, EndIP, Count, Date, Provider | ForEach-Object {
         $AustriaIPs += Convert-IpRangeToCidr -StartIP $_.StartIP -EndIP $_.EndIP
     }
 
@@ -403,7 +428,7 @@ The full path to the server executable file.
         -Direction Inbound `
         -Program $MinecraftExePath `
         -Action Allow `
-        -Profile Private,Domain `
+        -Profile Private, Domain `
         -RemoteAddress $InternalIPs `
         -Protocol TCP `
         -LocalPort $Ports
@@ -413,7 +438,7 @@ The full path to the server executable file.
         -Direction Inbound `
         -Program $MinecraftExePath `
         -Action Allow `
-        -Profile Private,Domain `
+        -Profile Private, Domain `
         -RemoteAddress $InternalIPs `
         -Protocol UDP `
         -LocalPort $Ports
@@ -421,10 +446,11 @@ The full path to the server executable file.
     Write-RelaxedIT -logtext "✅ Firewall rules for $Name Server created successfully for ports $($Ports -join ', ')."
 }
 
-function Out-NetworkTestPretty {
+function Out-NetworkTestPretty
+{
     param (
         # The input object is the hostname/IP string
-        [Parameter(ValueFromPipeline=$true)]
+        [Parameter(ValueFromPipeline = $true)]
         [string]$Target,
 
         # Switch to force IPv6 test for hostnames or addresses
@@ -433,19 +459,21 @@ function Out-NetworkTestPretty {
 
     # "172.17.17.17"  | Out-NetworkTestPretty
     # Error handling for empty input
-    if (-not $Target) {
+    if (-not $Target)
+    {
         return
     }
 
     # Set parameters for Test-Connection
     $TestParams = @{
-        Count = 1
-        ErrorAction = 'SilentlyContinue'
+        Count          = 1
+        ErrorAction    = 'SilentlyContinue'
         TimeoutSeconds = 1
     }
 
     # Add -IPv6 if the switch is present
-    if ($IPv6) {
+    if ($IPv6)
+    {
         $TestParams.Add('IPv6', $true)
     }
 
@@ -453,26 +481,33 @@ function Out-NetworkTestPretty {
     $PingResult = Test-Connection -ComputerName $Target @TestParams
 
     # Status determination (Check if any reply was received)
-    if ($PingResult) {
+    if ($PingResult)
+    {
         # Test-Connection returns an array of PingReply objects (even for -Count 1)
         # We need the first element's status/properties
         $FirstReply = $PingResult | Select-Object -First 1
 
-        if ($FirstReply.Status -eq 'Success') {
+        if ($FirstReply.Status -eq 'Success')
+        {
             $Status = "OK"
             $Latency = "$($FirstReply.Latency)ms"
             # Use the resolved IP if available, otherwise the target name
             $Address = $FirstReply.Address.IPAddressToString -or $Target
-        } else {
+        }
+        else
+        {
             # Test-Connection ran but failed (e.g., 'TimedOut', 'DestinationHostUnreachable')
             $Status = "DOWN (Status: $($FirstReply.Status))"
-            if ($IPv6) {
-            $Status += " ipv6"
+            if ($IPv6)
+            {
+                $Status += " ipv6"
             }
             $Latency = ""
             $Address = $Target # Use the original target name
         }
-    } else {
+    }
+    else
+    {
         # No object was returned (Test-Connection failed completely/SilentlyContinue)
         $Status = "DOWN (No Response)"
         $Latency = ""
@@ -480,4 +515,106 @@ function Out-NetworkTestPretty {
     }
 
     Write-RelaxedIT "  $Target $Address Status: $Status $Latency"
+}
+
+function Get-RelaxedProcessStatus
+{
+    $pids = $env:rit_processes -split ',' | Where-Object { $_ -match '^\d+$' }
+
+    if (-not $pids)
+    {
+        Write-RelaxedIT -LogText "Keine gespeicherten Prozesse gefunden." -ForegroundColor Yellow
+        return $false
+    }
+
+    $einerlaueftnoch = $false
+    foreach ($ritpid in $pids)
+    {
+        $proc = Get-Process -Id $ritpid -ErrorAction SilentlyContinue
+        if ($proc)
+        {
+            Write-RelaxedIT -LogText "Prozess $ritpid läuft noch (Name: $($proc.ProcessName)) $($proc.CommandLine))" -ForegroundColor Green
+            Write-RelaxedIT -LogText $proc
+            $einerlaueftnoch = $true
+        }
+        else
+        {
+            Write-RelaxedIT -LogText "Prozess $ritpid ist beendet oder existiert nicht mehr." -ForegroundColor Red
+        }
+    }
+    return $einerlaueftnoch
+}
+
+function Invoke-RelaxedSubScript
+{
+    <#
+
+    $subScripts = @("script1.ps1", "script2.ps1")
+	foreach ($script in $subScripts)
+	{
+		Invoke-RelaxedSubScript -Interpreter "powershell" -ScriptName $script
+	}
+
+    Wait-RelaxedProcesses -loop 30 -text "coho"
+
+    #>
+    param (
+        [string]$Interpreter = "pwsh",
+        [string]$ScriptName
+    )
+
+    $root = if ($PSScriptRoot) { $PSScriptRoot } else { Get-Location }
+    $scriptPath = Join-Path -Path $root -ChildPath $ScriptName
+    Write-RelaxedIT -logtext "Invoke-RelaxedSubScript: $Interpreter : '$scriptPath'" -NoNewline
+    #   Start-Process $Interpreter -ArgumentList "-File `"$scriptPath`""
+
+    $proc = Start-Process $Interpreter -ArgumentList "-File `"$scriptPath`"" -PassThru
+    $ritpid = $proc.Id
+
+    # Hole bestehende Liste und erweitere sie
+    $currentPIDs = "" + $env:rit_processes #-split ',' | Where-Object { $_ -ne '' }
+    $newpids = "" + $ritpid + "," + $currentPIDs
+    Write-RelaxedIT -logtext (" [Proc.Id]: $newpids") -noWriteDate
+    $env:rit_processes = $newpids
+}
+
+
+function Reset-RelaxedProcesses
+{
+    $env:rit_processes = ''
+    Write-RelaxedIT -logtext "rit-processes wurde zurückgesetzt." -ForegroundColor Cyan
+}
+
+function Wait-RelaxedProcesses
+{
+    param (
+        [int]$loop = 30,
+        [string]$text = ""
+    )
+
+    $finished = $false
+
+    Write-RelaxedIT -logtext "=== Check: Wait-Processes $text MAX: $loop ===" -ForegroundColor Cyan
+
+    for ($i = 0; $i -lt $loop; $i++)
+    {
+        if (Get-RelaxedProcessStatus)
+        {
+            Write-RelaxedIT -logtext "$i." -noWriteDate -NoNewline -ForegroundColor cyan
+            Start-Sleep -Seconds 10
+        }
+        else
+        {
+            $finished = $true
+            break
+        }
+    }
+    Reset-FitProcesses
+    if (!$finished)
+    {
+        $pids = $env:rit_processes -split ',' | Where-Object { $_ -match '^\d+$' }
+        Write-RelaxedIT "[WRN]Wait-RelaxedProcesses:-notfinishedintime-$env:computername-max$loop-pids-$pids-$text"
+        Write-RelaxedIT -logtext "$i." -noWriteDate -NoNewline -ForegroundColor cyan
+    }
+
 }

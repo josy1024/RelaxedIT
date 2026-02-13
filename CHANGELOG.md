@@ -13,6 +13,10 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.91]
+
+* 0.0.91 Feature calling Subscript Testing: Invoke-RelaxedSubScript
+
 ## [0.0.87] - 2025-11-20
 
 * 0.0.87 New Feature: Out-NetworkTestPretty
@@ -67,7 +71,7 @@ missing version numbers are for refactoring, tests and code optimisations.
 ## [0.0.47] - 2025-04-04
 
 * v0.0.48 New: Uninstall then Install 3rd party Software
-* v0.0.47 New: RelaxedIT.3rdParty.Update manage weekly 3rd Party Software upgrades via https://chocolatey.org/
+* v0.0.47 New: RelaxedIT.3rdParty.Update manage weekly 3rd Party Software upgrades via <https://chocolatey.org/>
 
 ## [0.0.44] - 2025-03-24
 
@@ -78,28 +82,28 @@ missing version numbers are for refactoring, tests and code optimisations.
 
 ## [0.0.30] - 2025-03-13
 
-- V0.0.30 New: Start-RelaxedLog -action "logfilepraefix"
-- V0.0.29 New: AUTOUPDATER Task: **RelaxedIT.Update.Task.Install**
-- V0.0.28 New: RelaxedIT.Install.All
-- V0.0.27 Output Color Changes
-- V0.0.26 Rename Write-Host Function to "Write-RelaxedIT"
-- v0.0.25 Editor Colors, Get-ColorText colors
+* V0.0.30 New: Start-RelaxedLog -action "logfilepraefix"
+* V0.0.29 New: AUTOUPDATER Task: **RelaxedIT.Update.Task.Install**
+* V0.0.28 New: RelaxedIT.Install.All
+* V0.0.27 Output Color Changes
+* V0.0.26 Rename Write-Host Function to "Write-RelaxedIT"
+* v0.0.25 Editor Colors, Get-ColorText colors
 
 ## [0.0.21] - 2025-03-11
 
-- v0.0.21 Fix: Update-RelaxedITModuleAndRemoveOld
-- v0.0.20 Fix: Version Numbering, Update
-- v0.0.17 Initial Release for RelaxedIT.Update.All
+* v0.0.21 Fix: Update-RelaxedITModuleAndRemoveOld
+* v0.0.20 Fix: Version Numbering, Update
+* v0.0.17 Initial Release for RelaxedIT.Update.All
 
 ## [0.0.12] - 2025-03-07
 
-- v0.0.12 RelaxedIT.EnergySaver.Run
+* v0.0.12 RelaxedIT.EnergySaver.Run
 
 ## [0.0.1] - 2025-03-07
 
 ### Added
 
-- v0.0.1 Initial Release for https://www.powershellgallery.com/
+* v0.0.1 Initial Release for <https://www.powershellgallery.com/>
 
 ### Changed
 
