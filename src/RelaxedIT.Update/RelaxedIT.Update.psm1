@@ -1,18 +1,21 @@
 ﻿# RelaxedIT.Update
 
 
-function Test-RelaxedIT.Update {
+function Test-RelaxedIT.Update
+{
     Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.68"
 }
 
-function RelaxedIT.Update.All {
+function RelaxedIT.Update.All
+{
     param (
         [string]$Scope = "AllUsers"
     )
 
     if ($Scope -eq "AllUsers")
     {
-        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+        {
             Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
             return
         }
@@ -26,13 +29,15 @@ function RelaxedIT.Update.All {
     Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
 
-function Compare-LastRun {
+function Compare-LastRun
+{
     param (
         [string]$LastrunTime,
         [int]$maxHours
     )
     # Check if the file exists
-    if (Test-Path $LastrunTime) {
+    if (Test-Path $LastrunTime)
+    {
         # Read the last run time from the file
         $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
         $lastRunTimestamp = Get-Date $lastRunData.LastRun
@@ -46,20 +51,24 @@ function Compare-LastRun {
         }
 
         return ($skipcheck)
-    } else {
-       Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found."
-       return $true
+    }
+    else
+    {
+        Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found."
+        return $true
     }
 }
 
-function Update-LastRunTime {
+function Update-LastRunTime
+{
     param (
         [string]$LastrunTime
     )
 
     # Ensure the folder exists
     $folderPath = Split-Path $LastrunTime
-    if (-not (Test-Path $folderPath)) {
+    if (-not (Test-Path $folderPath))
+    {
         New-Item -ItemType Directory -Path $folderPath -Force
     }
 
@@ -69,10 +78,11 @@ function Update-LastRunTime {
     } | ConvertTo-Json -Depth 1
     $timestampData | Set-Content -Path $LastrunTime -Force
 
-   Write-RelaxedIT -LogText  "Timestamp updated to ""$timestampData"" at File: ""$LastrunTime""."
+    Write-RelaxedIT -LogText  "Timestamp updated to ""$timestampData"" at File: ""$LastrunTime""."
 }
 
-function RelaxedIT.Resources.Install {
+function RelaxedIT.Resources.Install
+{
     param (
         [string]$Scope = "AllUsers"
     )
@@ -82,12 +92,16 @@ function RelaxedIT.Resources.Install {
 
 
 
-    foreach ($module in $modules) {
+    foreach ($module in $modules)
+    {
         # Check if the module is installed
-        if (-not (Get-Module -ListAvailable -Name $module)) {
+        if (-not (Get-Module -ListAvailable -Name $module))
+        {
             Write-RelaxedIT -LogText  "Module '$module' is not installed. Installing now..."
             Install-Module -Name $module -Force -Scope $Scope
-        } else {
+        }
+        else
+        {
             Write-RelaxedIT -LogText  "Module '$module' is already installed."
         }
     }
@@ -106,7 +120,8 @@ function RelaxedIT.Resources.Install {
 }
 # https://learn.microsoft.com/en-us/azure/storage/tables/table-storage-how-to-use-powershell
 
-function RelaxedIT.Resources.OneclickInstall {
+function RelaxedIT.Resources.OneclickInstall
+{
     param (
         [string]$Scope = "AllUsers"
     )
@@ -116,7 +131,8 @@ function RelaxedIT.Resources.OneclickInstall {
     pwsh -c RelaxedIT.Update.Task.Install
 }
 
-function RelaxedIT.Update.Task {
+function RelaxedIT.Update.Task
+{
     param (
         [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json",
         [int]$writemode = 1,
@@ -126,49 +142,59 @@ function RelaxedIT.Update.Task {
 
 
     # Run the RelaxedIT.Update.All command
-    try {
+    try
+    {
         Start-RelaxedLog -action "Update.Task"
         Write-RelaxedIT -logtext "RelaxedIT.Update.All"
         RelaxedIT.Update.All
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("# RelaxedIT.Update.All(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }
 
-    try {
+    try
+    {
         Write-RelaxedIT -logtext "RelaxedIT.Resources.Install"
         RelaxedIT.Resources.Install
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }
 
-    try {
+    try
+    {
         Write-RelaxedIT -logtext "Update.Task"
 
-        if ($writemode -gt 1) {
+        if ($writemode -gt 1)
+        {
             Write-RelaxedIT -LogText "Remove Timestamp file ""$LastrunTime""" -ForegroundColor Magenta
             remove-item -Path $LastrunTime -ErrorAction silentlycontinue
         }
         # Check if task should run using Compare-LastRun
-        if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours ($maxhours))) {
+        if (-not (Compare-LastRun -LastrunTime $LastrunTime -maxHours ($maxhours)))
+        {
             $ret = RelaxedIT.AzLog.Run.Ping -action "Skip"
             return
         }
         $ret = RelaxedIT.AzLog.Run.Ping -action "Start"
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("# Ping (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }
 
-    try {
+    try
+    {
         #RelaxedIT.3rdParty.upgrade
         Start-Process pwsh.exe -ArgumentList '-NoProfile -Command "Import-Module RelaxedIT.3rdParty; RelaxedIT.3rdParty.Update"'
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("#     RelaxedIT.3rdParty.upgrade(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }
@@ -187,7 +213,8 @@ function RelaxedIT.Update.Task {
     #    RelaxedIT.3rdParty.Update
 }
 
-function RelaxedIT.Update.Task.Install {
+function RelaxedIT.Update.Task.Install
+{
 
     # Define the scheduled task name
     $taskBaseName = "RelaxedIT Update Task"
@@ -195,7 +222,8 @@ function RelaxedIT.Update.Task.Install {
 
     # Check if the task already exists and remove it
 
-    if (Get-ScheduledTask -TaskName $taskBaseName -ErrorAction SilentlyContinue) {
+    if (Get-ScheduledTask -TaskName $taskBaseName -ErrorAction SilentlyContinue)
+    {
         Write-RelaxedIT "Task '$taskName' already exists. Removing it..."
         Get-ScheduledTask -TaskName $taskBaseName | Unregister-ScheduledTask -Confirm:$false
         Write-RelaxedIT "Task '$taskName' has been removed."
@@ -222,7 +250,7 @@ function RelaxedIT.Update.Task.Install {
 
     # Register the scheduled task
     Register-ScheduledTask -TaskName $taskName -Description $taskDescription `
-        -Trigger $trigger,$rebootTrigger -Action $action -Settings $settings `
+        -Trigger $trigger, $rebootTrigger -Action $action -Settings $settings `
         -User "SYSTEM" -RunLevel Highest
 
     Write-RelaxedIT -logtext  "Scheduled task '$taskName' has been successfully created."
@@ -230,14 +258,16 @@ function RelaxedIT.Update.Task.Install {
 }
 # Define the scheduled task name and other parameters
 
-function RelaxedIT.Install.All {
+function RelaxedIT.Install.All
+{
     param (
         [string]$Scope = "AllUsers"
     )
 
     if ($Scope = "AllUsers")
     {
-        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+        if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+        {
             Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
             return
         }
@@ -251,12 +281,14 @@ function RelaxedIT.Install.All {
     Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
 }
 
-Function Update-RelaxedITModuleAndRemoveOld {
+Function Update-RelaxedITModuleAndRemoveOld
+{
     param (
         [string[]]$ModuleNames
     )
 
-    foreach ($ModuleName in $ModuleNames) {
+    foreach ($ModuleName in $ModuleNames)
+    {
         Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName"""
 
         # Install or update the module

@@ -6,7 +6,8 @@ function Test-RelaxedIT
     return $ver
 }
 
-function Get-ColorText {
+function Get-ColorText
+{
     <#
     .SYNOPSIS
     Colors specific patterns in the input text. " ( nummber and dates "
@@ -46,22 +47,24 @@ function Get-ColorText {
 
 
     # Replace patterns with colored text
-    try {
-        $text = [regex]::Replace($text, $darkGrayPattern, {param($match) "`e[90m$($match.Value)`e[0m"})  # DarkGray
-        $text = [regex]::Replace($text, $BracketPattern, {param($match) "`e[90m$($match.Value)`e[0m"})  # DarkGray
-        $text = [regex]::Replace($text, $datePatternYYYYMMDD, {param($match) "`e[32m$($match.Value)`e[0m"})   # Green for YYYY-MM-DD
-        $text = [regex]::Replace($text, $datePatternDDMMYYYY_slash, {param($match) "`e[32m$($match.Value)`e[0m"})   # Green for DD/MM/YYYY
-        $text = [regex]::Replace($text, $datePatternDDMMYYYY, {param($match) "`e[32m$($match.Value)`e[0m"})   # Green for DD.MM.YYYY
-        $text = [regex]::Replace($text, $hourPattern, {param($match) "`e[32m$($match.Value)`e[0m"})   # Green for HH:MM:SS
-        $text = [regex]::Replace($text, $digitPattern, {param($match) "`e[35m$($match.Value)`e[0m"})  # DarkMagenta
-        $text = [regex]::Replace($text, $varPattern, {param($match) "`e[93m$($match.Value)`e[0m"}) # @variablename
-        $text = [regex]::Replace($text, $quotePattern, {param($match) "`e[96m$($match.Value)`e[0m"})  # Cyan
-        $text = [regex]::Replace($text, $bluePattern, {param($match) "`e[34m$($match.Value)`e[0m"})  # blue
-        $text = [regex]::Replace($text, $redPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
-        $text = [regex]::Replace($text, $keywordPattern, {param($match) "`e[31m$($match.Value)`e[0m"})  # red
+    try
+    {
+        $text = [regex]::Replace($text, $darkGrayPattern, { param($match) "`e[90m$($match.Value)`e[0m" })  # DarkGray
+        $text = [regex]::Replace($text, $BracketPattern, { param($match) "`e[90m$($match.Value)`e[0m" })  # DarkGray
+        $text = [regex]::Replace($text, $datePatternYYYYMMDD, { param($match) "`e[32m$($match.Value)`e[0m" })   # Green for YYYY-MM-DD
+        $text = [regex]::Replace($text, $datePatternDDMMYYYY_slash, { param($match) "`e[32m$($match.Value)`e[0m" })   # Green for DD/MM/YYYY
+        $text = [regex]::Replace($text, $datePatternDDMMYYYY, { param($match) "`e[32m$($match.Value)`e[0m" })   # Green for DD.MM.YYYY
+        $text = [regex]::Replace($text, $hourPattern, { param($match) "`e[32m$($match.Value)`e[0m" })   # Green for HH:MM:SS
+        $text = [regex]::Replace($text, $digitPattern, { param($match) "`e[35m$($match.Value)`e[0m" })  # DarkMagenta
+        $text = [regex]::Replace($text, $varPattern, { param($match) "`e[93m$($match.Value)`e[0m" }) # @variablename
+        $text = [regex]::Replace($text, $quotePattern, { param($match) "`e[96m$($match.Value)`e[0m" })  # Cyan
+        $text = [regex]::Replace($text, $bluePattern, { param($match) "`e[34m$($match.Value)`e[0m" })  # blue
+        $text = [regex]::Replace($text, $redPattern, { param($match) "`e[31m$($match.Value)`e[0m" })  # red
+        $text = [regex]::Replace($text, $keywordPattern, { param($match) "`e[31m$($match.Value)`e[0m" })  # red
 
     }
-    catch {
+    catch
+    {
         write-host "Get-ColorText ERROR: $text" -ForegroundColor Red
     }
 
@@ -69,7 +72,8 @@ function Get-ColorText {
     return $text
 }
 
-function Get-RelaxedITConfig {
+function Get-RelaxedITConfig
+{
     <#
     .SYNOPSIS
         json array config file
@@ -84,9 +88,9 @@ function Get-RelaxedITConfig {
         # $config.ConfigValue
     #>
     param (
-        [String]$config="config.json",
-        [String]$id="id",
-        [String]$match=""
+        [String]$config = "config.json",
+        [String]$id = "id",
+        [String]$match = ""
     )
 
     # Read the JSON file
@@ -97,38 +101,44 @@ function Get-RelaxedITConfig {
     {
         $result = $jsonobj | Where-Object { $_.($id) -eq $match }
     }
-    else {
+    else
+    {
         $result = $jsonobj
     }
 
-    if ($result) {
+    if ($result)
+    {
         return $result
-    } else {
+    }
+    else
+    {
         Write-RelaxedIT -logtext ("No configuration found for $id : $match")
     }
 }
 
 function Start-RelaxedLog
-{   [CmdletBinding()]
+{
+    [CmdletBinding()]
     param (
         [Parameter()]
-        [string]$action="action",
-        [string]$logfilepath="c:\temp\ps\default.log"
+        [string]$action = "action",
+        [string]$logfilepath = "c:\temp\ps\default.log"
     )
-    $logname = "$action" + ($MyInvocation.ScriptName.Split("\")[-1]).trimend(".ps1") +(Get-LogDateFileString) + ".log"
+    $logname = "$action" + ($MyInvocation.ScriptName.Split("\")[-1]).trimend(".ps1") + (Get-LogDateFileString) + ".log"
 
     $logfilepath = $logfilepath -replace "default.log", $logname
     Set-EnvVar -name "relaxedlog" -value $logfilepath
 }
 function Write-RelaxedIT
-{   [CmdletBinding()]
+{
+    [CmdletBinding()]
     param (
         [Parameter()]
         [string]$logtext,
-        [string]$logfilepath="c:\temp\ps\default.log",
-        [string]$ForegroundColor="green", #compat only to Write-Host
-        [string]$Color="green", #compat only to Write-Host #todo add alias!
-        [int]$level=0,
+        [string]$logfilepath = "c:\temp\ps\default.log",
+        [string]$ForegroundColor = "green", #compat only to Write-Host
+        [string]$Color = "green", #compat only to Write-Host #todo add alias!
+        [int]$level = 0,
         [switch]$noNewline = $false,
         [switch]$noWriteDate = $false
     )
@@ -137,17 +147,20 @@ function Write-RelaxedIT
     {
 
         $envVarName = "LogDateStringEnv"
-		$CurrentHour = [datetime]::UtcNow.ToString("yyyyMM.dd___HH")
-		$StoredHour = [Environment]::GetEnvironmentVariable($envVarName, "Process")
+        $CurrentHour = [datetime]::UtcNow.ToString("yyyyMM.dd___HH")
+        $StoredHour = [Environment]::GetEnvironmentVariable($envVarName, "Process")
 
-		if ($StoredHour -ne $CurrentHour) {
-		   # New hour: write full date and update env var
-		   $dateString = (GET-LogDateString) + " "
-		   [Environment]::SetEnvironmentVariable($envVarName, $CurrentHour, "Process")
-		} else {
-		   # Same hour: write only time
-		   $dateString = [datetime]::UtcNow.ToString("HH:mm:ss U\tc") + " "
-		}
+        if ($StoredHour -ne $CurrentHour)
+        {
+            # New hour: write full date and update env var
+            $dateString = (GET-LogDateString) + " "
+            [Environment]::SetEnvironmentVariable($envVarName, $CurrentHour, "Process")
+        }
+        else
+        {
+            # Same hour: write only time
+            $dateString = [datetime]::UtcNow.ToString("HH:mm:ss U\tc") + " "
+        }
 
         write-host ("" + $dateString ) -ForegroundColor darkgray -NoNewline
     }
@@ -158,26 +171,31 @@ function Write-RelaxedIT
     # Überprüfen der Umgebungsvariable "relaxedlog"
     $relaxedlog = Get-EnvVar -name "relaxedlog"
 
-    if (-not $relaxedlog) {
+    if (-not $relaxedlog)
+    {
 
-        $psscript = $MyInvocation.MyCommand.Name + "_" +(Get-LogDateFileString) + ".log"
+        $psscript = $MyInvocation.MyCommand.Name + "_" + (Get-LogDateFileString) + ".log"
         # logPath = "$logfilepath\$psscript.log"
-        $logfilepath = $logfilepath -replace "default.log",  $psscript
+        $logfilepath = $logfilepath -replace "default.log", $psscript
         Set-EnvVar -name "relaxedlog" -value $logfilepath
         $baseDirectory = Split-Path -Path $logfilepath
 
-        if (-not (Test-Path -Path $baseDirectory)) {
+        if (-not (Test-Path -Path $baseDirectory))
+        {
             New-Item -ItemType Directory -Path $baseDirectory -Force | Out-Null
             Write-Host "Base directory created: $baseDirectory"
         }
     }
 
-    if ($relaxedlog -ne "nolog") {
+    if ($relaxedlog -ne "nolog")
+    {
         # Logtext in die Datei schreiben
-        try {
+        try
+        {
             Add-Content -Path $logfilepath -Value ("" + (Get-LogDateString) + " " + $logtext)
         }
-        catch {
+        catch
+        {
             $errortext = "[ERR]: `$logfilepath = ""$logfilepath"", `$relaxedlog = ""$relaxedlog"", `$baseDirectory = ""$baseDirectory"""
             write-host (Get-ColorText -text $errortext)
         }
@@ -186,38 +204,39 @@ function Write-RelaxedIT
 
 Function Get-LogDateString
 {
-	[CmdletBinding()]
-	param (
-		[Parameter()]
-		[datetime] $date = [datetime]::UtcNow
-	)
-	<#
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [datetime] $date = [datetime]::UtcNow
+    )
+    <#
 	.SYNOPSIS
 		#GET-LogDateString #get-date
 	.DESCRIPTION
 		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück
 	#>
-	return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
+    return ([datetime]::UtcNow).toString("yyyy-MM-dd  HH:mm:ss U\tc")
 }
 
 
 Function Get-LogDateFileString
 {
-	[CmdletBinding()]
-	param (
-		[Parameter()]
-		[datetime] $date = [datetime]::UtcNow
-	)
-	<#
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [datetime] $date = [datetime]::UtcNow
+    )
+    <#
 	.SYNOPSIS
 		#GET-LogDateString #get-date
 	.DESCRIPTION
 		gibt #z_templates standard schoen formatiertes datum innerhalb der logfiles zurück
 	#>
-	return ([datetime]::UtcNow).toString("yyyy-MM-dd___HHmm_ss_U\tc")
+    return ([datetime]::UtcNow).toString("yyyy-MM-dd___HHmm_ss_U\tc")
 }
 
-function Get-EnvVar {
+function Get-EnvVar
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]$name
@@ -226,7 +245,8 @@ function Get-EnvVar {
 }
 
 # Funktion zum Setzen einer Umgebungsvariablen
-function Set-EnvVar {
+function Set-EnvVar
+{
     param (
         [Parameter(Mandatory = $true)]
         [string]$name,

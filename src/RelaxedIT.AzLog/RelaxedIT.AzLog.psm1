@@ -1,4 +1,5 @@
-﻿function RelaxedIT.AzLog.Run.Ping {
+﻿function RelaxedIT.AzLog.Run.Ping
+{
     param (
         [int]$interval = 300,
         [string]$config = "C:\ProgramData\RelaxedIT\azlog.json",
@@ -8,7 +9,8 @@
 
 
     if (!(test-path -path $config ))
-    {   $base = (Get-Module RelaxedIT.AzLog).ModuleBase
+    {
+        $base = (Get-Module RelaxedIT.AzLog).ModuleBase
         Test-AndCreatePath -Path (Get-BasePath -Path $config)
         copy-item -Path (join-path $base "azlog.json") -Destination $config
         Write-RelaxedIT "[Initial]: copy default config: ""$config"""
@@ -32,7 +34,8 @@
         Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: CONFIG: open azure cloud shell and create sys keys for table ""$tableName""!"
         break
     }
-    try {
+    try
+    {
         $displayVersion = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion
         #$productName = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductName
         $productName = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption
@@ -56,15 +59,18 @@
         $pendingdrivers = ($drivers.Title | Sort-Object -Unique) -join "; "
 
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("# GetOSInventory (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
 
     }
-    try {
+    try
+    {
         $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
 
-        if (-not $storageAccountName) {
+        if (-not $storageAccountName)
+        {
             throw "Missing storage account name"
         }
         #$sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
@@ -72,32 +78,37 @@
         $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
         $outdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
         # Step 2: Modify the entity
-        try {
+        try
+        {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
 
-                        # Define expected properties and their values
+            # Define expected properties and their values
             $expectedProps = @{
-                action = $action
-                displayVersion = $displayVersion
-                productName = $productName
+                action             = $action
+                displayVersion     = $displayVersion
+                productName        = $productName
                 currentBuildNumber = $currentBuildNumber
-                biosVersion = $biosVersion
-                manufacturer = $manufacturer
-                model = $model
-                ramGB = $ramGB
-                cpu = ($cpu_info | ConvertTo-Json)
-                version = $relaxedver
-                pendingdrivers = $pendingdrivers
-                SoftwareOutdated = $outdated
-                PingTimeUTC = Get-LogDateFileString
+                biosVersion        = $biosVersion
+                manufacturer       = $manufacturer
+                model              = $model
+                ramGB              = $ramGB
+                cpu                = ($cpu_info | ConvertTo-Json)
+                version            = $relaxedver
+                pendingdrivers     = $pendingdrivers
+                SoftwareOutdated   = $outdated
+                PingTimeUTC        = Get-LogDateFileString
             }
 
             # Ensure all properties exist on the entity
-            foreach ($key in $expectedProps.Keys) {
-                if (-not $entity.PSObject.Properties[$key]) {
+            foreach ($key in $expectedProps.Keys)
+            {
+                if (-not $entity.PSObject.Properties[$key])
+                {
                     Write-RelaxedIT -logtext ("Update-AzTableRow Prop Update: $key : " + $expectedProps[$key])
                     Add-Member -InputObject $entity -NotePropertyName $key -NotePropertyValue $expectedProps[$key]
-                } else {
+                }
+                else
+                {
                     $entity.$key = $expectedProps[$key]
                 }
             }
@@ -116,13 +127,16 @@
             Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
             return $retadd
         }
-        catch {
+        catch
+        {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found try update!" #TODO: FIX remove maybe not needed?!?!
-            try {
+            try
+            {
                 Write-RelaxedIT -logtext "Update: Add-AzTableRow ""$table"" $action" -NoNewline
                 $retadd = Update-AzTableRow -table $table -entity $entity
-                }
-            catch {
+            }
+            catch
+            {
                 $entity | Remove-AzTableRow -Table $table
             }
             Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
@@ -132,7 +146,8 @@
 
 
     }
-    catch {
+    catch
+    {
         Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
         $tryinsert = $true
@@ -141,21 +156,22 @@
     if ($tryinsert)
     {
         Write-RelaxedIT -logtext ("AzLog: Tryinsert! ") -ForegroundColor red
-        try {
+        try
+        {
             $prop = @{
-                PingTimeUTC = (Get-LogDateFileString)
-                action = $action
-                displayVersion = $displayVersion
-                productName = $productName
+                PingTimeUTC        = (Get-LogDateFileString)
+                action             = $action
+                displayVersion     = $displayVersion
+                productName        = $productName
                 currentBuildNumber = $currentBuildNumber
-                biosVersion = $biosVersion
-                manufacturer = $manufacturer
-                model = $model
-                ramGB = $ramGB
-                cpu = ($cpu_info | convertto-json)
-                version = $relaxedver
-                pendingdrivers =  $pendingdrivers
-                SoftwareOutdated = (RelaxedIT.3rdParty.chocolist)
+                biosVersion        = $biosVersion
+                manufacturer       = $manufacturer
+                model              = $model
+                ramGB              = $ramGB
+                cpu                = ($cpu_info | convertto-json)
+                version            = $relaxedver
+                pendingdrivers     = $pendingdrivers
+                SoftwareOutdated   = (RelaxedIT.3rdParty.chocolist)
             }
             Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
@@ -170,7 +186,8 @@
             Write-RelaxedIT -LogText ($prop | Out-String) -ForegroundColor Yellow
             return $retadd
         }
-        catch {
+        catch
+        {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: UPDATE ERR1: open azure cloud shell and create table ""$tableName"" with sas keys!"
             Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
             Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
