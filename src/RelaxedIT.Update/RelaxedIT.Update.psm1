@@ -3,7 +3,7 @@
 
 function Test-RelaxedIT.Update
 {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.68"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.91"
 }
 
 function RelaxedIT.Update.All
@@ -39,22 +39,34 @@ function Compare-LastRun
     if (Test-Path $LastrunTime)
     {
         # Read the last run time from the file
-        $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
-        $lastRunTimestamp = Get-Date $lastRunData.LastRun
-
-        # Calculate the hours since the last run
-        $hoursSinceLastRun = (Get-Date) - $lastRunTimestamp
-        $skipcheck = ($hoursSinceLastRun.TotalHours -ge $maxHours)
-        if ($skipcheck)
+        try
         {
-            Write-RelaxedIT -LogText  ("[SKIP] Task was executed less than $maxhours hours ago. LastRunHours: " + $hoursSinceLastRun.TotalHours)
-        }
+            $lastRunData = Get-Content $LastrunTime | ConvertFrom-Json
+            $lastRunTimestamp = Get-Date $lastRunData.LastRun
 
-        return ($skipcheck)
+            # Calculate the hours since the last run
+            $hoursSinceLastRun = (Get-Date) - $lastRunTimestamp
+            $hours = [math]::Round($hoursSinceLastRun.TotalHours, 2)
+
+            # If it ran less than $maxHours ago, skip (return $false)
+            if ($hours -lt $maxHours)
+            {
+                Write-RelaxedIT -LogText  ("[SKIP] Task was executed less than $maxHours hours ago. LastRunHours: " + $hours)
+                return $false
+            }
+
+            return $true
+        }
+        catch
+        {
+            Write-RelaxedIT -LogText ("[ERR] Compare-LastRun: failed to parse timestamp from file $LastrunTime " + $_.Exception.Message) -ForegroundColor Red
+            Write-RelaxedIT -LogText  "[WRN] Proceeding with run."
+            return $true
+        }
     }
     else
     {
-        Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found."
+        Write-RelaxedIT -LogText  "Timestamp file ""$LastrunTime"" not found. Proceeding with run."
         return $true
     }
 }
@@ -125,10 +137,34 @@ function RelaxedIT.Resources.OneclickInstall
     param (
         [string]$Scope = "AllUsers"
     )
-    RelaxedIT.Resources.Install
-    pwsh -c RelaxedIT.Update.All
-    pwsh -c Relaxedit.Update.Task
-    pwsh -c RelaxedIT.Update.Task.Install
+    RelaxedIT.Resources.Install -Scope $Scope
+
+    try
+    {
+        & pwsh -NoProfile -Command "Import-Module RelaxedIT; RelaxedIT.Update.All -Scope '$Scope'"
+    }
+    catch
+    {
+        Write-RelaxedIT -LogText ("[ERR] Could not run RelaxedIT.Update.All: " + $_.Exception.Message) -ForegroundColor Red
+    }
+
+    try
+    {
+        & pwsh -NoProfile -Command "Import-Module RelaxedIT; RelaxedIT.Update.Task"
+    }
+    catch
+    {
+        Write-RelaxedIT -LogText ("[ERR] Could not run RelaxedIT.Update.Task: " + $_.Exception.Message) -ForegroundColor Red
+    }
+
+    try
+    {
+        & pwsh -NoProfile -Command "Import-Module RelaxedIT; RelaxedIT.Update.Task.Install"
+    }
+    catch
+    {
+        Write-RelaxedIT -LogText ("[ERR] Could not run RelaxedIT.Update.Task.Install: " + $_.Exception.Message) -ForegroundColor Red
+    }
 }
 
 function RelaxedIT.Update.Task
@@ -219,23 +255,21 @@ function RelaxedIT.Update.Task.Install
     # Define the scheduled task name
     $taskBaseName = "RelaxedIT Update Task"
     $taskName = "RelaxedIT\$taskBaseName"
-
     # Check if the task already exists and remove it
-
-    if (Get-ScheduledTask -TaskName $taskBaseName -ErrorAction SilentlyContinue)
+    if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue)
     {
         Write-RelaxedIT "Task '$taskName' already exists. Removing it..."
-        Get-ScheduledTask -TaskName $taskBaseName | Unregister-ScheduledTask -Confirm:$false
+        Get-ScheduledTask -TaskName $taskName | Unregister-ScheduledTask -Confirm:$false
         Write-RelaxedIT "Task '$taskName' has been removed."
     }
 
     $taskDescription = "Runs the RelaxedIT.Update.Task PowerShell command"
     $taskCommand = "pwsh.exe"
     $taskArguments = "-NoProfile -ExecutionPolicy Bypass -Command RelaxedIT.Update.Task"
-    $taskTriggerTime = "00:20PM"  # Example: Set to run at 3:00 AM
 
-    # Create a daily trigger
-    $trigger = New-ScheduledTaskTrigger -Daily -At (Get-Date $taskTriggerTime)
+    # Create a daily trigger (run at 00:20)
+    $taskTriggerTime = (Get-Date).Date.AddHours(0).AddMinutes(20)
+    $trigger = New-ScheduledTaskTrigger -Daily -At $taskTriggerTime
 
     # Create a reboot trigger with a random delay of up to 1 hour
     $rebootTrigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay (New-TimeSpan -Minutes 60)
@@ -249,11 +283,18 @@ function RelaxedIT.Update.Task.Install
         -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Hours 1)
 
     # Register the scheduled task
-    Register-ScheduledTask -TaskName $taskName -Description $taskDescription `
-        -Trigger $trigger, $rebootTrigger -Action $action -Settings $settings `
-        -User "SYSTEM" -RunLevel Highest
+    try
+    {
+        Register-ScheduledTask -TaskName $taskName -Description $taskDescription `
+            -Trigger $trigger, $rebootTrigger -Action $action -Settings $settings `
+            -User "SYSTEM" -RunLevel Highest
 
-    Write-RelaxedIT -logtext  "Scheduled task '$taskName' has been successfully created."
+        Write-RelaxedIT -logtext  "Scheduled task '$taskName' has been successfully created."
+    }
+    catch
+    {
+        Write-RelaxedIT -logtext ("[ERR] Could not register scheduled task: " + $_.Exception.Message) -ForegroundColor Red
+    }
 
 }
 # Define the scheduled task name and other parameters
@@ -264,45 +305,131 @@ function RelaxedIT.Install.All
         [string]$Scope = "AllUsers"
     )
 
-    if ($Scope = "AllUsers")
+    if ($Scope -eq "AllUsers")
     {
         if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
         {
-            Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or -`$scope CurrentUser"
+            Write-RelaxedIT -logtext "[ERR] Please run this script as an administrator or use -Scope CurrentUser"
             return
         }
     }
 
-    Install-Module -Name "RelaxedIT" -Force -Scope $Scope
-    Install-Module -Name "RelaxedIT.Update" -Force -Scope $Scope
-
-    #Install-Module -Name "RelaxedIT*" -Force -Scope $Scope
-
-    Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
+    try
+    {
+        Install-Module -Name "RelaxedIT" -Force -Scope $Scope -AllowClobber -ErrorAction Stop
+        Install-Module -Name "RelaxedIT.Update" -Force -Scope $Scope -AllowClobber -ErrorAction Stop
+        Write-RelaxedIT -logtext "RelaxedIT.Install.All DONE"
+    }
+    catch
+    {
+        Write-RelaxedIT -logtext ("[ERR] RelaxedIT.Install.All failed: " + $_.Exception.Message) -ForegroundColor Red
+    }
 }
 
 Function Update-RelaxedITModuleAndRemoveOld
 {
     param (
-        [string[]]$ModuleNames
+        [string[]]$ModuleNames,
+        [string]$Scope = 'AllUsers'
     )
 
     foreach ($ModuleName in $ModuleNames)
     {
-        Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: ""$ModuleName"""
+        Write-RelaxedIT -logtext "Update-RelaxedITModuleAndRemoveOld Module: '$ModuleName'"
 
-        # Install or update the module
-        Install-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
-
-        # Retrieve the latest version
-        $LatestVersion = (Get-InstalledModule -Name $ModuleName).Version
-
-        # Remove older versions, if any
-        Get-InstalledModule -Name $ModuleName -AllVersions | Where-Object { $_.Version -ne $LatestVersion } | ForEach-Object {
-            Write-RelaxedIT -logtext  "Removing old version: ""$($_.Version)"" of module ""$ModuleName"""
-            Uninstall-Module -Name $_.Name -RequiredVersion $_.Version -Force
+        try
+        {
+            Install-Module -Name $ModuleName -Force -Scope $Scope -AllowClobber -ErrorAction Stop
         }
-        #Import-Module -Name $ModuleName -Force -Scope 'AllUsers' -AllowClobber
-        #Import-module -name  $ModuleName -Force -Scope Global
+        catch
+        {
+            Write-RelaxedIT -logtext ("[ERR] Failed to install/update module $ModuleName " + $_.Exception.Message) -ForegroundColor Red
+            continue
+        }
+
+        try
+        {
+            $installed = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
+            if (-not $installed)
+            {
+                Write-RelaxedIT -logtext ("[WARN] Installed module $ModuleName not found after install.")
+                continue
+            }
+
+            $LatestVersion = $installed.Version
+
+            $older = Get-InstalledModule -Name $ModuleName -AllVersions | Where-Object { $_.Version -ne $LatestVersion }
+            foreach ($old in $older)
+            {
+                Write-RelaxedIT -logtext  "Removing old version: ""$($old.Version)"" of module ""$ModuleName"""
+                try { Uninstall-Module -Name $ModuleName -RequiredVersion $old.Version -Force -ErrorAction SilentlyContinue } catch { Write-RelaxedIT -logtext ("[WARN] Could not remove old version: " + $_.Exception.Message) -ForegroundColor Yellow }
+            }
+        }
+        catch
+        {
+            Write-RelaxedIT -logtext ("[ERR] Error while cleaning old versions of $ModuleName " + $_.Exception.Message) -ForegroundColor Red
+        }
+    }
+}
+
+
+function Test-RelaxedITCompareLastRun
+{
+    <#
+    .SYNOPSIS
+        Prüft die Compare-LastRun-Logik mit mehreren Testfällen.
+    .DESCRIPTION
+        Legt temporäre Timestamp-Dateien an und vergleicht das Ergebnis von Compare-LastRun.
+        Gibt am Ende $true zurück, wenn alle Tests erfolgreich sind, sonst $false.
+    #>
+
+    param (
+        [string]$LastrunTime = "C:\ProgramData\RelaxedIT\Update.Task.json",
+        [int]$MaxHours = 72
+    )
+
+    $TempDir = Split-Path -Path $LastrunTime
+    if (-not (Test-Path $TempDir)) { New-Item -ItemType Directory -Path $TempDir -Force | Out-Null }
+
+    $failures = @()
+
+    # Case A: Missing file -> should return $true (proceed)
+    $fileA = Join-Path $TempDir "missing.json"
+    if (Test-Path $fileA) { Remove-Item $fileA -Force }
+    $resA = Compare-LastRun -LastrunTime $fileA -maxHours $MaxHours
+    if (-not $resA) { $failures += "MissingFile expected true, got false" }
+
+    # Case B: Recent run (1 hour ago) -> should return $false (skip)
+    $fileB = Join-Path $TempDir "recent.json"
+    $payloadB = @{ LastRun = ((Get-Date).AddHours(-1)).ToString("o") } | ConvertTo-Json
+    $payloadB | Set-Content -Path $fileB -Force
+    $resB = Compare-LastRun -LastrunTime $fileB -maxHours $MaxHours
+    if ($resB) { $failures += "RecentRun expected false, got true" }
+
+    # Case C: Old run (100 hours ago) -> should return $true (proceed)
+    $fileC = Join-Path $TempDir "old.json"
+    $payloadC = @{ LastRun = ((Get-Date).AddHours(-100)).ToString("o") } | ConvertTo-Json
+    $payloadC | Set-Content -Path $fileC -Force
+    $resC = Compare-LastRun -LastrunTime $fileC -maxHours $MaxHours
+    if (-not $resC) { $failures += "OldRun expected true, got false" }
+
+    # Case D: Malformed JSON -> should return $true (proceed, error handled)
+    $fileD = Join-Path $TempDir "malformed.json"
+    "{ NotAValidJson }" | Set-Content -Path $fileD -Force
+    $resD = Compare-LastRun -LastrunTime $fileD -maxHours $MaxHours
+    if (-not $resD) { $failures += "MalformedJSON expected true, got false" }
+
+    # Clean up temp files
+    # Remove-Item (Join-Path $TempDir "*") -ErrorAction SilentlyContinue
+
+    if ($failures.Count -eq 0)
+    {
+        Write-RelaxedIT -LogText "Test-CompareLastRun: ALL TESTS PASSED"
+        return $true
+    }
+    else
+    {
+        Write-RelaxedIT -LogText ("Test-CompareLastRun: FAILURES: " + ($failures -join "; ")) -ForegroundColor Red
+        return $false
     }
 }

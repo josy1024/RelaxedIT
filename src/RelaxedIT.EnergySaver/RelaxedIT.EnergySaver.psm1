@@ -40,7 +40,7 @@
             $host.ui.RawUI.WindowTitle = "NO: Energy Server Mode"
             # Disable sleep mode
             powercfg -change -standby-timeout-ac 0
-            foreach ($process in $anyrunning)
+            foreach ($process in $anyrunning)
             {
                 $processName = $process.ProcessName
                 $matchingPattern = $monitorTimeouts.Keys | Where-Object { $processName -match $_ }
