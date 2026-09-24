@@ -305,7 +305,7 @@ function Install-RelaxedITAzLogPackage
 
     if (Get-Command choco -ErrorAction SilentlyContinue)
     {
-        choco update nuget.commandline -y
+        choco upgrade nuget.commandline -y
     }
 
     if (Get-Command nuget -ErrorAction SilentlyContinue)
