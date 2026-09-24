@@ -3,7 +3,7 @@
 
 function Test-RelaxedIT.Update
 {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.95"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.97"
 }
 
 function RelaxedIT.Update.All
@@ -106,7 +106,7 @@ function RelaxedIT.Resources.Install
     $modules = @("Az.Resources", "Az.Storage", "AzTable", "PSWindowsUpdate")
 
 
-    Install-Package Azure.Data.Tables -ProviderName NuGet -Scope $Scope -Force -Confirm:$false -ErrorAction SilentlyContinue
+    #DAUERT EWIG => CHOCO! Install-Package Azure.Data.Tables -ProviderName NuGet -Scope $Scope -Force -Confirm:$false -ErrorAction SilentlyContinue
 
     foreach ($module in $modules)
     {

@@ -15,6 +15,7 @@ missing version numbers are for refactoring, tests and code optimisations.
 
 ## [0.0.94] - 2026-09-24
 
+* 0.0.97 install update handling loop!
 * 0.0.95 refactor .net8 AZ Table
 * 0.0.94 better sas key handling
 

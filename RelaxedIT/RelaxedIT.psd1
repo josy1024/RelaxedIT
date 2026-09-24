@@ -12,7 +12,7 @@
 RootModule = 'RelaxedIT'
 
 # Version number of this module.
-ModuleVersion = '0.0.94'
+ModuleVersion = '0.0.96'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()

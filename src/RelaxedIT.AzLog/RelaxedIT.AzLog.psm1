@@ -5,6 +5,14 @@
         [string]$PackageRoot = "C:\ProgramData\RelaxedIT\packages"
     )
 
+    if (-not (Test-Path -Path $PackageRoot))
+    {
+        Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog: Package root path '$PackageRoot' does not exist. Run Install-RelaxedITAzLogPackage to install dependencies.... " -ForegroundColor Yellow
+        Install-RelaxedITAzLogPackage
+
+        return $false
+    }
+
     if ([System.Type]::GetType("Azure.Data.Tables.TableClient, Azure.Data.Tables") -ne $null)
     {
         return $true
@@ -38,7 +46,7 @@
     if ([System.Type]::GetType("Azure.Data.Tables.TableClient, Azure.Data.Tables") -eq $null -and (Test-Path -Path $PackageRoot))
     {
         $net8Dlls = Get-ChildItem -Path $PackageRoot -Filter "*.dll" -Recurse -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match 'net8\.0' }
+        Where-Object { $_.FullName -match 'net8\.0' }
         foreach ($dll in $net8Dlls)
         {
             try { [System.Reflection.Assembly]::LoadFrom($dll.FullName) | Out-Null } catch {}
@@ -138,10 +146,10 @@ function Send-RelaxedITAzLogPing
         $relaxedver = Test-RelaxedIT -ErrorAction SilentlyContinue
 
         $cpu_info = Get-CimInstance -ClassName Win32_Processor -ErrorAction SilentlyContinue |
-            Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
+        Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
 
         $ram_info = Get-CimInstance -ClassName Win32_PhysicalMemory -ErrorAction SilentlyContinue |
-            Measure-Object -Property Capacity -Sum
+        Measure-Object -Property Capacity -Sum
         $ramGB = if ($ram_info.Sum) { [math]::round($ram_info.Sum / 1GB, 2) } else { 0 }
 
         # Optional driver updates check
@@ -215,7 +223,7 @@ function Send-RelaxedITAzLogPing
 
         # Build TableEntity using PowerShell 7 hashtable
         $partitionKey = "ping"
-        $rowKey       = $env:COMPUTERNAME
+        $rowKey = $env:COMPUTERNAME
 
         $entityData = @{
             PartitionKey       = $partitionKey
