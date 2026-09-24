@@ -97,15 +97,28 @@ function Send-RelaxedITAzLogPing
     }
 
     $cfg = Get-RelaxedITConfig -config $config
-    Set-EnvVar -name "RelaxedIT.AzLog.sasToken" -value $cfg.sasToken
-    Set-EnvVar -name "RelaxedIT.AzLog.accountKey" -value $cfg.accountKey
-    Set-EnvVar -name "RelaxedIT.AzLog.storageAccountName" -value $cfg.storageAccountName
-    Set-EnvVar -name "RelaxedIT.AzLog.tableName" -value $cfg.tableName
 
-    $tableName = Get-EnvVar -name "RelaxedIT.AzLog.tableName"
-    $storageAccountName = Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName"
-    $currentSas = Get-EnvVar -name "RelaxedIT.AzLog.sasToken"
-    $currentKey = Get-EnvVar -name "RelaxedIT.AzLog.accountKey"
+    $currentSas = if ($cfg.sasToken) { [string]$cfg.sasToken } else { [string](Get-EnvVar -name "RelaxedIT.AzLog.sasToken") }
+    $currentKey = if ($cfg.accountKey) { [string]$cfg.accountKey } else { [string](Get-EnvVar -name "RelaxedIT.AzLog.accountKey") }
+    $storageAccountName = if ($cfg.storageAccountName) { [string]$cfg.storageAccountName } else { [string](Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName") }
+    $tableName = if ($cfg.tableName) { [string]$cfg.tableName } else { [string](Get-EnvVar -name "RelaxedIT.AzLog.tableName") }
+
+    if (-not [string]::IsNullOrWhiteSpace($currentSas))
+    {
+        Set-EnvVar -name "RelaxedIT.AzLog.sasToken" -value $currentSas
+    }
+    if (-not [string]::IsNullOrWhiteSpace($currentKey))
+    {
+        Set-EnvVar -name "RelaxedIT.AzLog.accountKey" -value $currentKey
+    }
+    if (-not [string]::IsNullOrWhiteSpace($storageAccountName))
+    {
+        Set-EnvVar -name "RelaxedIT.AzLog.storageAccountName" -value $storageAccountName
+    }
+    if (-not [string]::IsNullOrWhiteSpace($tableName))
+    {
+        Set-EnvVar -name "RelaxedIT.AzLog.tableName" -value $tableName
+    }
 
     $hasSas = (-not [string]::IsNullOrWhiteSpace($currentSas)) -and (-not $currentSas.StartsWith("#"))
     $hasKey = (-not [string]::IsNullOrWhiteSpace($currentKey)) -and (-not $currentKey.StartsWith("#"))
@@ -245,7 +258,16 @@ function Send-RelaxedITAzLogPing
             Timestamp          = [DateTimeOffset]::UtcNow
         }
 
-        $entity = [Azure.Data.Tables.TableEntity]::new($entityData)
+        $cleanEntityData = @{}
+        foreach ($entry in $entityData.GetEnumerator())
+        {
+            if ($null -ne $entry.Value)
+            {
+                $cleanEntityData[$entry.Key] = $entry.Value
+            }
+        }
+
+        $entity = [Azure.Data.Tables.TableEntity]::new($cleanEntityData)
 
         # Upsert entity (Insert or Merge in a single atomic call)
         Write-RelaxedIT -logtext "Upsert: [Azure.Data.Tables] ""$model"" $action " -NoNewline

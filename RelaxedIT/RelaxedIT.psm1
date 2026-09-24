@@ -1,4 +1,4 @@
-﻿
+
 function Test-RelaxedIT
 {
     $ver = "0.0.97"
@@ -237,21 +237,64 @@ Function Get-LogDateFileString
 
 function Get-EnvVar
 {
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]$name
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name,
+
+        [Parameter(Position = 1)]
+        [System.EnvironmentVariableTarget]$Target = [System.EnvironmentVariableTarget]::Process,
+
+        [Parameter(Position = 2)]
+        [string]$Default = $null
     )
-    return [System.Environment]::GetEnvironmentVariable($name)
+
+    process
+    {
+        try
+        {
+            $val = [System.Environment]::GetEnvironmentVariable($Name, $Target)
+            if ($null -eq $val -and $null -ne $Default)
+            {
+                return $Default
+            }
+            return $val
+        }
+        catch
+        {
+            return $Default
+        }
+    }
 }
 
 # Funktion zum Setzen einer Umgebungsvariablen
 function Set-EnvVar
 {
+    [CmdletBinding()]
     param (
-        [Parameter(Mandatory = $true)]
-        [string]$name,
-        [Parameter(Mandatory = $true)]
-        [string]$value
+        [Parameter(Mandatory = $true, Position = 0, ValueFromPipelineByPropertyName = $true)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Name,
+
+        [Parameter(Position = 1, ValueFromPipeline = $true, ValueFromPipelineByPropertyName = $true)]
+        [AllowNull()]
+        [AllowEmptyString()]
+        [string]$Value,
+
+        [Parameter(Position = 2)]
+        [System.EnvironmentVariableTarget]$Target = [System.EnvironmentVariableTarget]::Process
     )
-    [System.Environment]::SetEnvironmentVariable($name, $value)
+
+    process
+    {
+        try
+        {
+            [System.Environment]::SetEnvironmentVariable($Name, $Value, $Target)
+        }
+        catch
+        {
+            Write-RelaxedIT -logtext "[ERR] Set-EnvVar: Failed to set '$Name': $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
 }
