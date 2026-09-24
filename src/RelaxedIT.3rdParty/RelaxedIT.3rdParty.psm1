@@ -75,13 +75,33 @@
         return
     }
 
+    # Query Chocolatey once and match the configured package IDs against the actual outdated list.
+    $outdatedPackages = @()
+    try {
+        $outdatedOutput = & "C:\ProgramData\chocolatey\choco.exe" outdated --limit-output 2>$null
+        if ($LASTEXITCODE -eq 0 -and $outdatedOutput) {
+            $outdatedPackages = @(
+                $outdatedOutput |
+                    ConvertFrom-Csv -Delimiter '|' -Header packagename,currentversion,availableversion,pinned |
+                    Where-Object { $_.packagename } |
+                    ForEach-Object { $_.packagename.Trim() }
+            )
+        }
+    }
+    catch {
+        Write-RelaxedIT "[WRN] Unable to query Chocolatey outdated package list: $($_.Exception.Message)"
+    }
 
     # Loop through each program and execute the Chocolatey upgrade command
     foreach ($program in $programList) {
         $id = $program.id
         $params = $program.params
+        $normalizedId = $id.Trim().ToLowerInvariant()
+        $isOutdated = @($outdatedPackages | Where-Object {
+            $_.Trim().ToLowerInvariant() -eq $normalizedId
+        }).Count -gt 0
 
-        if ($outdatedPrograms -match $id) {
+        if ($isOutdated) {
             Write-RelaxedIT "[Upgrading]: ""$id"" is outdated, upgrading now..."
             if ($params) {
                 & "C:\ProgramData\chocolatey\choco.exe" upgrade -y $id -params $params

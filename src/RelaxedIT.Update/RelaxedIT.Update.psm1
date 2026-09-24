@@ -25,8 +25,11 @@ function RelaxedIT.Update.All
 
     #Fallback to install and update
     Update-RelaxedITModuleAndRemoveOld -ModuleNames @("RelaxedIT", "RelaxedIT.Update", "RelaxedIT.EnergySaver", "RelaxedIT.Tools", "RelaxedIT.AzLog", "RelaxedIT.3rdparty")
+    Write-RelaxedIT -logtext "RelaxedIT.Update.All RelaxedIT modules updated and old versions removed."
 
-    Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
+    # not reliable/hangs?!?
+    # Update-PSResource Az -Scope AllUsers -Confirm:$true
+    # Write-RelaxedIT -logtext "RelaxedIT.Update.All DONE"
 }
 
 function Compare-LastRun

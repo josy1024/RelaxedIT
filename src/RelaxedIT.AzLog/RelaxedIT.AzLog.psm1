@@ -32,7 +32,7 @@
     if ((Get-EnvVar -name "RelaxedIT.AzLog.sasToken").startswith("#"))
     {
         Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: CONFIG: open azure cloud shell and create sys keys for table ""$tableName""!"
-        break
+        return
     }
     try
     {
@@ -73,14 +73,21 @@
         {
             throw "Missing storage account name"
         }
-        #$sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
-        $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
+        $sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
+        #-SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
+        $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken $sasToken
         $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
+        if (-not $table)
+        {
+            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Table '$tableName' not found or inaccessible. Check SAS token and storage account." -ForegroundColor Yellow
+            $tryinsert = $true
+        }
         $outdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
         # Step 2: Modify the entity
         try
         {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
+            if (-not $table) { throw "Table object is null" }
 
             # Define expected properties and their values
             $expectedProps = @{
@@ -174,6 +181,13 @@
                 SoftwareOutdated   = (RelaxedIT.3rdParty.chocolist)
             }
             Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
+            if (-not $table)
+            {
+                Write-RelaxedIT -logtext "[ERR] RelaxedIT.AzLog.Run: Cannot insert because table object is null. Aborting insert." -ForegroundColor Red
+                return
+            }
+
+            Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {
@@ -193,4 +207,85 @@
             Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
         }
     }
+}
+
+function RelaxedIT.AzLog.AddToken
+{
+    param(
+        [string]$config = "C:\ProgramData\RelaxedIT\azlog.json",
+        [int]$years = 5
+    )
+
+    if (!(Test-Path -Path $config))
+    {
+        $base = (Get-Module RelaxedIT.AzLog).ModuleBase
+        Test-AndCreatePath -Path (Get-BasePath -Path $config)
+        Copy-Item -Path (Join-Path $base "azlog.json") -Destination $config
+        Write-RelaxedIT "[Initial]: copy default config: '$config'"
+    }
+
+    $configobj = Get-RelaxedITConfig -config $config
+
+    $storageAccountName = $configobj.storageAccountName
+    if (-not $storageAccountName)
+    {
+        $storageAccountName = Read-Host "Enter storage account name"
+        if (-not $storageAccountName) { Write-RelaxedIT -logtext "No storage account name provided. Aborting." -ForegroundColor Red; return }
+        $configobj.storageAccountName = $storageAccountName
+    }
+
+    $tableName = $configobj.tableName
+    if (-not $tableName)
+    {
+        $tableName = Read-Host "Enter table name (default: table01)"
+        if (-not $tableName) { $tableName = "table01" }
+        $configobj.tableName = $tableName
+    }
+
+    $expiry = (Get-Date).AddYears($years).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmZ")
+
+    $azCmd = Get-Command az -ErrorAction SilentlyContinue
+    if (-not $azCmd)
+    {
+        Write-RelaxedIT -logtext "[ERR] Azure CLI 'az' not found. Install Azure CLI and login ('az login') then retry." -ForegroundColor Red
+        return
+    }
+
+    # Try table-level SAS first (requires az extension / permissions)
+    $sas = $null
+    <#
+    $tableName = "table01"
+    $storageAccountName = "endpointlogger"
+    $expiry = (Get-Date).AddYears(5).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmZ")
+    $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types s --https-only -o tsv 2>$null
+    #>
+    try
+    {
+        $sas = & az storage table generate-sas --name $tableName --account-name $storageAccountName --expiry $expiry --permissions rau --https-only --auth-mode login -o tsv 2>$null
+    }
+    catch {}
+
+    if (-not $sas -or $sas -eq "")
+    {
+        try
+        {
+            # Fallback to account-level SAS for table service (broader permissions)
+            $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types s --https-only -o tsv 2>$null
+        }
+        catch {}
+    }
+
+    if (-not $sas -or $sas -eq "")
+    {
+        Write-RelaxedIT -logtext "[ERR] Could not generate SAS via Azure CLI. Ensure 'az login' and proper RBAC or provide SAS manually." -ForegroundColor Red
+        return
+    }
+
+    if ($sas.StartsWith("?")) { $sas = $sas.Substring(1) }
+
+    $configobj.sasToken = $sas
+    $configobj | ConvertTo-Json | Set-Content -Path $config -Encoding utf8BOM
+
+    Write-RelaxedIT -logtext "SAS token generated and saved to $config" -ForegroundColor Green
+    return $sas
 }
