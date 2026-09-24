@@ -256,6 +256,15 @@
     }
 }
 
+function RelaxedIT.AzLog.InstalRequiredPackages
+{
+    choco update nuget.commandline -y
+    nuget install Azure.Data.Tables -OutputDirectory C:\ProgramData\RelaxedIT\packages -ExcludeVersion -Framework net8.0
+
+    # 2. In PowerShell 7 direkt einbinden
+    # Add-Type -Path "C:\ProgramData\RelaxedIT\packages\Azure.Data.Tables\lib\net8.0\Azure.Data.Tables.dll"
+}
+
 function RelaxedIT.AzLog.AddToken
 {
     param(

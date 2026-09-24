@@ -106,6 +106,7 @@ function RelaxedIT.Resources.Install
     $modules = @("Az.Resources", "Az.Storage", "AzTable", "PSWindowsUpdate")
 
 
+    Install-Package Azure.Data.Tables -ProviderName NuGet -Scope $Scope -Force -Confirm:$false -ErrorAction SilentlyContinue
 
     foreach ($module in $modules)
     {
