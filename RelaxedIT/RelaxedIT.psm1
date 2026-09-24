@@ -1,7 +1,7 @@
-
+﻿
 function Test-RelaxedIT
 {
-    $ver = "0.0.97"
+    $ver = "0.0.98"
     write-host (Get-ColorText -text "[Test] ""RelaxedIT.module"" - optimized for pwsh7 v: $ver :-)")
     return $ver
 }
