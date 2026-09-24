@@ -74,9 +74,30 @@
             throw "Missing storage account name"
         }
         $sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
-        #-SasToken (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
-        $storageContext = New-AzStorageContext -StorageAccountName $storageAccountName -SasToken $sasToken
-        $table = (Get-AzStorageTable -Name $tableName -Context $storageContext).CloudTable
+
+        # Ensure the AzTable module is loaded into the session
+        #Import-Module AzTable -ErrorAction Stop
+
+        $cleanSas = $sasToken.TrimStart('?')
+
+        # 1. Base Table Endpoint (WITHOUT query string)
+        $tableEndpoint = "https://$storageAccountName.table.core.windows.net/$tableName"
+
+        Write-RelaxedIT -logtext "tableEndpoint: $tableEndpoint ..."
+
+        # 2. Instantiate SAS Credential & CloudTable
+        $sasCredentials = [Microsoft.Azure.Cosmos.Table.StorageCredentials]::new($cleanSas)
+        $table = [Microsoft.Azure.Cosmos.Table.CloudTable]::new([Uri]$tableEndpoint, $sasCredentials)
+
+        # # # 3. Insert Row
+        # $properties = @{
+        #     PingTimeUTC = (Get-Date).ToUniversalTime().ToString("o")
+        #     "version"   = "01"
+        # }
+
+        # Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey ([Guid]::NewGuid().ToString()) -property $properties
+        # Update-AzTableRow -Table $table -PartitionKey "ping" -RowKey ($env:computername) -property $properties
+
         if (-not $table)
         {
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Table '$tableName' not found or inaccessible. Check SAS token and storage account." -ForegroundColor Yellow
@@ -88,6 +109,21 @@
         {
             $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
             if (-not $table) { throw "Table object is null" }
+
+            $entityEtag = $null
+            try { $entityEtag = $entity.Etag } catch { $entityEtag = "<unreadable>" }
+            if ($null -eq $entity)
+            {
+                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow returned no entity for PartitionKey='ping', RowKey='$($env:computername)' on table '$tableName'."
+            }
+            elseif ([string]::IsNullOrWhiteSpace([string]$entityEtag))
+            {
+                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow returned entity but ETag was null/empty for PartitionKey='ping', RowKey='$($env:computername)'. Properties: $($entity.PSObject.Properties.Name -join ', ')"
+            }
+            else
+            {
+                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow loaded entity with ETag '$entityEtag' for PartitionKey='ping', RowKey='$($env:computername)'."
+            }
 
             # Define expected properties and their values
             $expectedProps = @{
@@ -120,16 +156,27 @@
                 }
             }
 
-            Write-RelaxedIT -logtext "Update-AzTableRow ""$table"" $action" -NoNewline
+            Write-RelaxedIT -logtext "Update-AzTableRow ""$model"" $action" -NoNewline
 
             $retadd = Update-AzTableRow -table $table -entity $entity
+            $retEtag = $null
+            try { $retEtag = $retadd.Etag } catch { $retEtag = "<unreadable>" }
+            if ([string]::IsNullOrWhiteSpace([string]$retEtag))
+            {
+                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Update-AzTableRow response had no readable ETag. HttpStatusCode=$($retadd.HttpStatuscode); Node=$($env:computername); PartitionKey='ping'" -ForegroundColor Yellow
+            }
+            else
+            {
+                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Update-AzTableRow response ETag='$retEtag'; HttpStatusCode=$($retadd.HttpStatuscode)" -ForegroundColor Yellow
+            }
+
             if ($retadd.HttpStatuscode -eq 204)
             {
                 Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Red
+                Write-RelaxedIT -logtext ("[ERR] " + $retadd.HttpStatuscode + " | ETag=" + $retEtag) -noWriteDate -ForegroundColor Red
             }
             Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
             return $retadd
@@ -139,7 +186,7 @@
             Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found try update!" #TODO: FIX remove maybe not needed?!?!
             try
             {
-                Write-RelaxedIT -logtext "Update: Add-AzTableRow ""$table"" $action" -NoNewline
+                Write-RelaxedIT -logtext "Update: Add-AzTableRow ""$tableName"" $action" -NoNewline
                 $retadd = Update-AzTableRow -table $table -entity $entity
             }
             catch
@@ -180,7 +227,7 @@
                 pendingdrivers     = $pendingdrivers
                 SoftwareOutdated   = (RelaxedIT.3rdParty.chocolist)
             }
-            Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
+            Write-RelaxedIT -logtext "Insert: Add-AzTableRow $model $action" -NoNewline
             if (-not $table)
             {
                 Write-RelaxedIT -logtext "[ERR] RelaxedIT.AzLog.Run: Cannot insert because table object is null. Aborting insert." -ForegroundColor Red
@@ -191,11 +238,11 @@
             $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
             if ($retadd.HttpStatuscode -eq 204)
             {
-                Write-RelaxedIT -logtext "OK"  -noWriteDate -ForegroundColor Green
+                Write-RelaxedIT -logtext ("OK" + $retadd.Etag)  -noWriteDate -ForegroundColor Green
             }
             else
             {
-                Write-RelaxedIT -logtext "[ERR] $retadd" -noWriteDate -ForegroundColor Green
+                Write-RelaxedIT -logtext "[ERR] $retadd." -noWriteDate -ForegroundColor Green
             }
             Write-RelaxedIT -LogText ($prop | Out-String) -ForegroundColor Yellow
             return $retadd
@@ -258,6 +305,13 @@ function RelaxedIT.AzLog.AddToken
     $storageAccountName = "endpointlogger"
     $expiry = (Get-Date).AddYears(5).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmZ")
     $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types s --https-only -o tsv 2>$null
+    f> $sas = & az storage account generate-sas `
+     --account-name $storageAccountName `
+     --expiry $expiry `
+     --permissions rwdlacup `
+     --services t `
+     --resource-types o `
+     --https-only -o tsv 2>$null
     #>
     try
     {

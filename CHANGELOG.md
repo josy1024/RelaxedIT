@@ -13,6 +13,10 @@ missing version numbers are for refactoring, tests and code optimisations.
 * get-help for all modules
 * RelaxedIT.GetConfigfromAz ? (Company/Unit/Team)
 
+## [0.0.94] - 2026-09-24
+
+* 0.0.94 better sas key handling
+
 ## [0.0.91]
 
 * 0.0.91 Feature calling Subscript Testing: Invoke-RelaxedSubScript
