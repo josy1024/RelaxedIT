@@ -1,280 +1,311 @@
-﻿function RelaxedIT.AzLog.Run.Ping
+﻿function Import-RelaxedITAzLogAssembly
 {
+    [CmdletBinding()]
+    param (
+        [string]$PackageRoot = "C:\ProgramData\RelaxedIT\packages"
+    )
+
+    if ([System.Type]::GetType("Azure.Data.Tables.TableClient, Azure.Data.Tables") -ne $null)
+    {
+        return $true
+    }
+
+    # In PowerShell 7 / .NET 8, load dependencies in order prior to primary assembly
+    $dependencyDlls = @(
+        "System.Memory.Data\lib\net8.0\System.Memory.Data.dll",
+        "System.ClientModel\lib\net8.0\System.ClientModel.dll",
+        "Azure.Core\lib\net8.0\Azure.Core.dll",
+        "Azure.Data.Tables\lib\net8.0\Azure.Data.Tables.dll"
+    )
+
+    foreach ($relPath in $dependencyDlls)
+    {
+        $fullPath = Join-Path $PackageRoot $relPath
+        if (Test-Path -Path $fullPath)
+        {
+            Add-Type -Path $fullPath -ErrorAction SilentlyContinue
+        }
+    }
+
+    # Explicitly check primary assembly requested path
+    $primaryPath = "C:\ProgramData\RelaxedIT\packages\Azure.Data.Tables\lib\net8.0\Azure.Data.Tables.dll"
+    if (Test-Path -Path $primaryPath)
+    {
+        Add-Type -Path $primaryPath -ErrorAction SilentlyContinue
+    }
+
+    # Fallback scan for net8.0 assemblies if relocated
+    if ([System.Type]::GetType("Azure.Data.Tables.TableClient, Azure.Data.Tables") -eq $null -and (Test-Path -Path $PackageRoot))
+    {
+        $net8Dlls = Get-ChildItem -Path $PackageRoot -Filter "*.dll" -Recurse -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match 'net8\.0' }
+        foreach ($dll in $net8Dlls)
+        {
+            try { [System.Reflection.Assembly]::LoadFrom($dll.FullName) | Out-Null } catch {}
+        }
+    }
+
+    return ([System.Type]::GetType("Azure.Data.Tables.TableClient, Azure.Data.Tables") -ne $null)
+}
+
+# Pre-load assembly when module is loaded
+$null = Import-RelaxedITAzLogAssembly
+
+function Send-RelaxedITAzLogPing
+{
+    [CmdletBinding()]
     param (
         [int]$interval = 300,
         [string]$config = "C:\ProgramData\RelaxedIT\azlog.json",
         [string]$action = "",
-        [string]$sasToken = "# initial"
-    )
-
-
-    if (!(test-path -path $config ))
-    {
-        $base = (Get-Module RelaxedIT.AzLog).ModuleBase
-        Test-AndCreatePath -Path (Get-BasePath -Path $config)
-        copy-item -Path (join-path $base "azlog.json") -Destination $config
-        Write-RelaxedIT "[Initial]: copy default config: ""$config"""
-    }
-
-    if ($sasToken -ne "# initial")
-    {
-        $configobj = Get-RelaxedITConfig -config $config
-        $configobj.sasToken = $sasToken
-        $configobj | ConvertTo-Json | Set-Content -Path $config -Encoding utf8BOM
-    }
-
-    set-envvar -name "RelaxedIT.AzLog.sasToken" -value (Get-RelaxedITConfig -config $config).sasToken
-    set-envvar -name "RelaxedIT.AzLog.storageAccountName" -value (Get-RelaxedITConfig -config $config).storageAccountName
-    set-envvar -name "RelaxedIT.AzLog.tableName" -value (Get-RelaxedITConfig -config $config).tableName
-
-    $tableName = (Get-EnvVar -name "RelaxedIT.AzLog.tableName")
-
-    if ((Get-EnvVar -name "RelaxedIT.AzLog.sasToken").startswith("#"))
-    {
-        Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: CONFIG: open azure cloud shell and create sys keys for table ""$tableName""!"
-        return
-    }
-    try
-    {
-        $displayVersion = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion
-        #$productName = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').ProductName
-        $productName = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption
-
-        $currentBuildNumber = (Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').CurrentBuildNumber
-        $biosVersion = (Get-WmiObject -Class Win32_BIOS).SMBIOSBIOSVersion
-        $manufacturer = (Get-WmiObject -Class Win32_ComputerSystem).Manufacturer
-        $model = (Get-WmiObject -Class Win32_ComputerSystem).Model
-        $relaxedver = Test-RelaxedIT
-
-        $cpu_info = Get-WmiObject -Class Win32_Processor | Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
-
-        # Get RAM information
-        $ram_info = Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
-        $ramGB = $([math]::round($ram_info.Sum / 1GB, 2))
-
-        Import-Module PSWindowsUpdate
-
-        # Alle verfügbaren Updates anzeigen
-        $drivers = Get-WindowsUpdate -Category "Drivers"
-        $pendingdrivers = ($drivers.Title | Sort-Object -Unique) -join "; "
-
-    }
-    catch
-    {
-        Write-RelaxedIT -logtext ("# GetOSInventory (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-
-    }
-    try
-    {
-        $storageAccountName = (Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName")
-
-        if (-not $storageAccountName)
-        {
-            throw "Missing storage account name"
-        }
-        $sasToken = (Get-EnvVar -name "RelaxedIT.AzLog.sasToken")
-
-        # Ensure the AzTable module is loaded into the session
-        #Import-Module AzTable -ErrorAction Stop
-
-        $cleanSas = $sasToken.TrimStart('?')
-
-        # 1. Base Table Endpoint (WITHOUT query string)
-        $tableEndpoint = "https://$storageAccountName.table.core.windows.net/$tableName"
-
-        Write-RelaxedIT -logtext "tableEndpoint: $tableEndpoint ..."
-
-        # 2. Instantiate SAS Credential & CloudTable
-        $sasCredentials = [Microsoft.Azure.Cosmos.Table.StorageCredentials]::new($cleanSas)
-        $table = [Microsoft.Azure.Cosmos.Table.CloudTable]::new([Uri]$tableEndpoint, $sasCredentials)
-
-        # # # 3. Insert Row
-        # $properties = @{
-        #     PingTimeUTC = (Get-Date).ToUniversalTime().ToString("o")
-        #     "version"   = "01"
-        # }
-
-        # Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey ([Guid]::NewGuid().ToString()) -property $properties
-        # Update-AzTableRow -Table $table -PartitionKey "ping" -RowKey ($env:computername) -property $properties
-
-        if (-not $table)
-        {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Table '$tableName' not found or inaccessible. Check SAS token and storage account." -ForegroundColor Yellow
-            $tryinsert = $true
-        }
-        $outdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
-        # Step 2: Modify the entity
-        try
-        {
-            $entity = Get-AzTableRow -table $table -customFilter "(PartitionKey eq 'ping') and (RowKey eq '$($env:computername)')"
-            if (-not $table) { throw "Table object is null" }
-
-            $entityEtag = $null
-            try { $entityEtag = $entity.Etag } catch { $entityEtag = "<unreadable>" }
-            if ($null -eq $entity)
-            {
-                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow returned no entity for PartitionKey='ping', RowKey='$($env:computername)' on table '$tableName'."
-            }
-            elseif ([string]::IsNullOrWhiteSpace([string]$entityEtag))
-            {
-                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow returned entity but ETag was null/empty for PartitionKey='ping', RowKey='$($env:computername)'. Properties: $($entity.PSObject.Properties.Name -join ', ')"
-            }
-            else
-            {
-                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Get-AzTableRow loaded entity with ETag '$entityEtag' for PartitionKey='ping', RowKey='$($env:computername)'."
-            }
-
-            # Define expected properties and their values
-            $expectedProps = @{
-                action             = $action
-                displayVersion     = $displayVersion
-                productName        = $productName
-                currentBuildNumber = $currentBuildNumber
-                biosVersion        = $biosVersion
-                manufacturer       = $manufacturer
-                model              = $model
-                ramGB              = $ramGB
-                cpu                = ($cpu_info | ConvertTo-Json)
-                version            = $relaxedver
-                pendingdrivers     = $pendingdrivers
-                SoftwareOutdated   = $outdated
-                PingTimeUTC        = Get-LogDateFileString
-            }
-
-            # Ensure all properties exist on the entity
-            foreach ($key in $expectedProps.Keys)
-            {
-                if (-not $entity.PSObject.Properties[$key])
-                {
-                    Write-RelaxedIT -logtext ("Update-AzTableRow Prop Update: $key : " + $expectedProps[$key])
-                    Add-Member -InputObject $entity -NotePropertyName $key -NotePropertyValue $expectedProps[$key]
-                }
-                else
-                {
-                    $entity.$key = $expectedProps[$key]
-                }
-            }
-
-            Write-RelaxedIT -logtext "Update-AzTableRow ""$model"" $action" -NoNewline
-
-            $retadd = Update-AzTableRow -table $table -entity $entity
-            $retEtag = $null
-            try { $retEtag = $retadd.Etag } catch { $retEtag = "<unreadable>" }
-            if ([string]::IsNullOrWhiteSpace([string]$retEtag))
-            {
-                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Update-AzTableRow response had no readable ETag. HttpStatusCode=$($retadd.HttpStatuscode); Node=$($env:computername); PartitionKey='ping'" -ForegroundColor Yellow
-            }
-            else
-            {
-                Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: Update-AzTableRow response ETag='$retEtag'; HttpStatusCode=$($retadd.HttpStatuscode)" -ForegroundColor Yellow
-            }
-
-            if ($retadd.HttpStatuscode -eq 204)
-            {
-                Write-RelaxedIT -logtext "OK" -noWriteDate -ForegroundColor Green
-            }
-            else
-            {
-                Write-RelaxedIT -logtext ("[ERR] " + $retadd.HttpStatuscode + " | ETag=" + $retEtag) -noWriteDate -ForegroundColor Red
-            }
-            Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
-            return $retadd
-        }
-        catch
-        {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: Element: ping in ""$tableName"" not found try update!" #TODO: FIX remove maybe not needed?!?!
-            try
-            {
-                Write-RelaxedIT -logtext "Update: Add-AzTableRow ""$tableName"" $action" -NoNewline
-                $retadd = Update-AzTableRow -table $table -entity $entity
-            }
-            catch
-            {
-                $entity | Remove-AzTableRow -Table $table
-            }
-            Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-            Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-            $tryinsert = $true
-        }
-
-
-    }
-    catch
-    {
-        Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-        $tryinsert = $true
-    }
-
-    if ($tryinsert)
-    {
-        Write-RelaxedIT -logtext ("AzLog: Tryinsert! ") -ForegroundColor red
-        try
-        {
-            $prop = @{
-                PingTimeUTC        = (Get-LogDateFileString)
-                action             = $action
-                displayVersion     = $displayVersion
-                productName        = $productName
-                currentBuildNumber = $currentBuildNumber
-                biosVersion        = $biosVersion
-                manufacturer       = $manufacturer
-                model              = $model
-                ramGB              = $ramGB
-                cpu                = ($cpu_info | convertto-json)
-                version            = $relaxedver
-                pendingdrivers     = $pendingdrivers
-                SoftwareOutdated   = (RelaxedIT.3rdParty.chocolist)
-            }
-            Write-RelaxedIT -logtext "Insert: Add-AzTableRow $model $action" -NoNewline
-            if (-not $table)
-            {
-                Write-RelaxedIT -logtext "[ERR] RelaxedIT.AzLog.Run: Cannot insert because table object is null. Aborting insert." -ForegroundColor Red
-                return
-            }
-
-            Write-RelaxedIT -logtext "Insert: Add-AzTableRow ""$table"" $action" -NoNewline
-            $retadd = Add-AzTableRow -Table $table -PartitionKey "ping" -RowKey $env:computername -property $prop
-            if ($retadd.HttpStatuscode -eq 204)
-            {
-                Write-RelaxedIT -logtext ("OK" + $retadd.Etag)  -noWriteDate -ForegroundColor Green
-            }
-            else
-            {
-                Write-RelaxedIT -logtext "[ERR] $retadd." -noWriteDate -ForegroundColor Green
-            }
-            Write-RelaxedIT -LogText ($prop | Out-String) -ForegroundColor Yellow
-            return $retadd
-        }
-        catch
-        {
-            Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: UPDATE ERR1: open azure cloud shell and create table ""$tableName"" with sas keys!"
-            Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
-            Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
-        }
-    }
-}
-
-function RelaxedIT.AzLog.InstalRequiredPackages
-{
-    choco update nuget.commandline -y
-    nuget install Azure.Data.Tables -OutputDirectory C:\ProgramData\RelaxedIT\packages -ExcludeVersion -Framework net8.0
-
-    # 2. In PowerShell 7 direkt einbinden
-    # Add-Type -Path "C:\ProgramData\RelaxedIT\packages\Azure.Data.Tables\lib\net8.0\Azure.Data.Tables.dll"
-}
-
-function RelaxedIT.AzLog.AddToken
-{
-    param(
-        [string]$config = "C:\ProgramData\RelaxedIT\azlog.json",
-        [int]$years = 5
+        [string]$sasToken = "# initial",
+        [string]$accountKey = ""
     )
 
     if (!(Test-Path -Path $config))
     {
         $base = (Get-Module RelaxedIT.AzLog).ModuleBase
+        if (-not $base)
+        {
+            $base = $PSScriptRoot
+        }
+        Test-AndCreatePath -Path (Get-BasePath -Path $config)
+        Copy-Item -Path (Join-Path $base "azlog.json") -Destination $config
+        Write-RelaxedIT "[Initial]: copy default config: ""$config"""
+    }
+
+    $configobj = Get-RelaxedITConfig -config $config
+
+    if ($sasToken -ne "# initial")
+    {
+        $configobj.sasToken = $sasToken
+        $configobj | ConvertTo-Json | Set-Content -Path $config -Encoding utf8BOM
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($accountKey))
+    {
+        $configobj | Add-Member -NotePropertyName "accountKey" -NotePropertyValue $accountKey -Force
+        $configobj | ConvertTo-Json | Set-Content -Path $config -Encoding utf8BOM
+    }
+
+    $cfg = Get-RelaxedITConfig -config $config
+    Set-EnvVar -name "RelaxedIT.AzLog.sasToken" -value $cfg.sasToken
+    Set-EnvVar -name "RelaxedIT.AzLog.accountKey" -value $cfg.accountKey
+    Set-EnvVar -name "RelaxedIT.AzLog.storageAccountName" -value $cfg.storageAccountName
+    Set-EnvVar -name "RelaxedIT.AzLog.tableName" -value $cfg.tableName
+
+    $tableName = Get-EnvVar -name "RelaxedIT.AzLog.tableName"
+    $storageAccountName = Get-EnvVar -name "RelaxedIT.AzLog.storageAccountName"
+    $currentSas = Get-EnvVar -name "RelaxedIT.AzLog.sasToken"
+    $currentKey = Get-EnvVar -name "RelaxedIT.AzLog.accountKey"
+
+    $hasSas = (-not [string]::IsNullOrWhiteSpace($currentSas)) -and (-not $currentSas.StartsWith("#"))
+    $hasKey = (-not [string]::IsNullOrWhiteSpace($currentKey)) -and (-not $currentKey.StartsWith("#"))
+
+    if (-not $hasSas -and -not $hasKey)
+    {
+        Write-RelaxedIT -logtext "[WRN] RelaxedIT.AzLog.Run: CONFIG: No valid sasToken or accountKey configured for table ""$tableName""!"
+        return
+    }
+
+    if (-not $storageAccountName)
+    {
+        Write-RelaxedIT -logtext "[ERR] RelaxedIT.AzLog.Run: Missing storage account name in config: $config" -ForegroundColor Red
+        return
+    }
+
+    # Ensure Azure.Data.Tables assembly is loaded
+    if (-not (Import-RelaxedITAzLogAssembly))
+    {
+        Write-RelaxedIT -logtext "[ERR] RelaxedIT.AzLog.Run: Azure.Data.Tables.dll could not be loaded from C:\ProgramData\RelaxedIT\packages. Run Install-RelaxedITAzLogPackage." -ForegroundColor Red
+        return
+    }
+
+    # Collect OS & Hardware inventory using PowerShell 7 compatible CIM cmdlets
+    try
+    {
+        $winNtReg = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -ErrorAction SilentlyContinue
+        $displayVersion = $winNtReg.DisplayVersion
+        $currentBuildNumber = $winNtReg.CurrentBuildNumber
+
+        $productName = (Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction SilentlyContinue).Caption
+        $biosVersion = (Get-CimInstance -ClassName Win32_BIOS -ErrorAction SilentlyContinue).SMBIOSBIOSVersion
+
+        $cs = Get-CimInstance -ClassName Win32_ComputerSystem -ErrorAction SilentlyContinue
+        $manufacturer = $cs.Manufacturer
+        $model = $cs.Model
+
+        $relaxedver = Test-RelaxedIT -ErrorAction SilentlyContinue
+
+        $cpu_info = Get-CimInstance -ClassName Win32_Processor -ErrorAction SilentlyContinue |
+            Select-Object -Property Name, NumberOfCores, NumberOfLogicalProcessors
+
+        $ram_info = Get-CimInstance -ClassName Win32_PhysicalMemory -ErrorAction SilentlyContinue |
+            Measure-Object -Property Capacity -Sum
+        $ramGB = if ($ram_info.Sum) { [math]::round($ram_info.Sum / 1GB, 2) } else { 0 }
+
+        # Optional driver updates check
+        $pendingdrivers = ""
+        try
+        {
+            if (Get-Command Get-WindowsUpdate -ErrorAction SilentlyContinue)
+            {
+                $drivers = Get-WindowsUpdate -Category "Drivers" -ErrorAction SilentlyContinue
+                if ($drivers)
+                {
+                    $pendingdrivers = ($drivers.Title | Sort-Object -Unique) -join "; "
+                }
+            }
+        }
+        catch {}
+
+        # Outdated third-party packages check
+        $outdated = $null
+        try
+        {
+            if (Get-Command RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue)
+            {
+                $outdated = RelaxedIT.3rdParty.chocolist -ErrorAction SilentlyContinue
+            }
+        }
+        catch {}
+    }
+    catch
+    {
+        Write-RelaxedIT -logtext ("# GetOSInventory (" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName) -ForegroundColor Red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor Red
+    }
+
+    # Initialize Azure Table Client
+    try
+    {
+        $tableClient = $null
+
+        if ($hasKey)
+        {
+            # SharedKeyCredential (Account Name + Account Key)
+            $endpoint = [Uri]"https://$storageAccountName.table.core.windows.net"
+            $credentials = [Azure.Data.Tables.TableSharedKeyCredential]::new($storageAccountName, $currentKey)
+            $tableClient = [Azure.Data.Tables.TableClient]::new($endpoint, $tableName, $credentials)
+        }
+        elseif ($hasSas)
+        {
+            # SAS Credential
+            $cleanSas = $currentSas.TrimStart('?')
+            $tableUri = [Uri]"https://$storageAccountName.table.core.windows.net/$tableName"
+            $credentials = [Azure.AzureSasCredential]::new($cleanSas)
+            $tableClient = [Azure.Data.Tables.TableClient]::new($tableUri, $credentials)
+        }
+
+        if (-not $tableClient)
+        {
+            throw "Failed to initialize Azure.Data.Tables.TableClient."
+        }
+
+        # Automatically create table if it does not exist
+        try
+        {
+            $null = $tableClient.CreateTableIfNotExists()
+        }
+        catch
+        {
+            # SAS tokens without table management permissions may throw; continue to entity upsert
+            Write-RelaxedIT -logtext "[DBG] RelaxedIT.AzLog.Run: CreateTableIfNotExists notice: $($_.Exception.Message)"
+        }
+
+        # Build TableEntity using PowerShell 7 hashtable
+        $partitionKey = "ping"
+        $rowKey       = $env:COMPUTERNAME
+
+        $entityData = @{
+            PartitionKey       = $partitionKey
+            RowKey             = $rowKey
+            ServerName         = $env:COMPUTERNAME
+            action             = $action
+            displayVersion     = $displayVersion
+            productName        = $productName
+            currentBuildNumber = $currentBuildNumber
+            biosVersion        = $biosVersion
+            manufacturer       = $manufacturer
+            model              = $model
+            ramGB              = $ramGB
+            cpu                = ($cpu_info | ConvertTo-Json -Compress)
+            version            = $relaxedver
+            pendingdrivers     = $pendingdrivers
+            SoftwareOutdated   = $outdated
+            PingTimeUTC        = (Get-LogDateFileString)
+            Timestamp          = [DateTimeOffset]::UtcNow
+        }
+
+        $entity = [Azure.Data.Tables.TableEntity]::new($entityData)
+
+        # Upsert entity (Insert or Merge in a single atomic call)
+        Write-RelaxedIT -logtext "Upsert: [Azure.Data.Tables] ""$model"" $action " -NoNewline
+
+        $response = $tableClient.UpsertEntity($entity, [Azure.Data.Tables.TableUpdateMode]::Merge)
+        $etag = $response.Headers.ETag
+
+        if ($response.Status -in 200, 201, 204)
+        {
+            Write-RelaxedIT -logtext "OK (Status: $($response.Status); ETag: $etag)" -noWriteDate -ForegroundColor Green
+        }
+        else
+        {
+            Write-RelaxedIT -logtext "[ERR] Status: $($response.Status) | ETag: $etag" -noWriteDate -ForegroundColor Red
+        }
+
+        Write-RelaxedIT -LogText ($entity | Out-String) -ForegroundColor Yellow
+        return $response
+    }
+    catch
+    {
+        Write-RelaxedIT -logtext ("#(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName) -ForegroundColor Red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor Red
+    }
+}
+
+function Install-RelaxedITAzLogPackage
+{
+    [CmdletBinding()]
+    param (
+        [string]$PackageDestination = "C:\ProgramData\RelaxedIT\packages"
+    )
+
+    Test-AndCreatePath -Path $PackageDestination
+
+    if (Get-Command choco -ErrorAction SilentlyContinue)
+    {
+        choco update nuget.commandline -y
+    }
+
+    if (Get-Command nuget -ErrorAction SilentlyContinue)
+    {
+        nuget install Azure.Data.Tables -OutputDirectory $PackageDestination -ExcludeVersion -Framework net8.0
+    }
+    else
+    {
+        Write-RelaxedIT -logtext "[WRN] nuget command not found. Ensure nuget.commandline is installed." -ForegroundColor Yellow
+    }
+
+    $null = Import-RelaxedITAzLogAssembly -PackageRoot $PackageDestination
+}
+
+function Add-RelaxedITAzLogToken
+{
+    [CmdletBinding()]
+    param(
+        [string]$config = "C:\ProgramData\RelaxedIT\azlog.json",
+        [int]$years = 5,
+        [string]$accountKey = ""
+    )
+
+    if (!(Test-Path -Path $config))
+    {
+        $base = (Get-Module RelaxedIT.AzLog).ModuleBase
+        if (-not $base)
+        {
+            $base = $PSScriptRoot
+        }
         Test-AndCreatePath -Path (Get-BasePath -Path $config)
         Copy-Item -Path (Join-Path $base "azlog.json") -Destination $config
         Write-RelaxedIT "[Initial]: copy default config: '$config'"
@@ -298,30 +329,25 @@ function RelaxedIT.AzLog.AddToken
         $configobj.tableName = $tableName
     }
 
+    if (-not [string]::IsNullOrWhiteSpace($accountKey))
+    {
+        $configobj | Add-Member -NotePropertyName "accountKey" -NotePropertyValue $accountKey -Force
+        $configobj | ConvertTo-Json | Set-Content -Path $config -Encoding utf8BOM
+        Write-RelaxedIT -logtext "Account key saved to $config" -ForegroundColor Green
+        return $accountKey
+    }
+
     $expiry = (Get-Date).AddYears($years).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmZ")
 
     $azCmd = Get-Command az -ErrorAction SilentlyContinue
     if (-not $azCmd)
     {
-        Write-RelaxedIT -logtext "[ERR] Azure CLI 'az' not found. Install Azure CLI and login ('az login') then retry." -ForegroundColor Red
+        Write-RelaxedIT -logtext "[ERR] Azure CLI 'az' not found. Install Azure CLI and login ('az login') or configure accountKey/sasToken manually." -ForegroundColor Red
         return
     }
 
     # Try table-level SAS first (requires az extension / permissions)
     $sas = $null
-    <#
-    $tableName = "table01"
-    $storageAccountName = "endpointlogger"
-    $expiry = (Get-Date).AddYears(5).ToUniversalTime().ToString("yyyy-MM-ddTHH:mmZ")
-    $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types s --https-only -o tsv 2>$null
-    f> $sas = & az storage account generate-sas `
-     --account-name $storageAccountName `
-     --expiry $expiry `
-     --permissions rwdlacup `
-     --services t `
-     --resource-types o `
-     --https-only -o tsv 2>$null
-    #>
     try
     {
         $sas = & az storage table generate-sas --name $tableName --account-name $storageAccountName --expiry $expiry --permissions rau --https-only --auth-mode login -o tsv 2>$null
@@ -332,15 +358,15 @@ function RelaxedIT.AzLog.AddToken
     {
         try
         {
-            # Fallback to account-level SAS for table service (broader permissions)
-            $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types s --https-only -o tsv 2>$null
+            # Fallback to account-level SAS for table service
+            $sas = & az storage account generate-sas --account-name $storageAccountName --expiry $expiry --permissions rwdlacup --services t --resource-types sco --https-only -o tsv 2>$null
         }
         catch {}
     }
 
     if (-not $sas -or $sas -eq "")
     {
-        Write-RelaxedIT -logtext "[ERR] Could not generate SAS via Azure CLI. Ensure 'az login' and proper RBAC or provide SAS manually." -ForegroundColor Red
+        Write-RelaxedIT -logtext "[ERR] Could not generate SAS via Azure CLI. Ensure 'az login' and proper RBAC or provide SAS/accountKey manually." -ForegroundColor Red
         return
     }
 
@@ -352,3 +378,11 @@ function RelaxedIT.AzLog.AddToken
     Write-RelaxedIT -logtext "SAS token generated and saved to $config" -ForegroundColor Green
     return $sas
 }
+
+# Export Aliases for backwards compatibility with dot-separated names
+Set-Alias -Name 'RelaxedIT.AzLog.Run.Ping' -Value 'Send-RelaxedITAzLogPing'
+Set-Alias -Name 'RelaxedIT.AzLog.AddToken' -Value 'Add-RelaxedITAzLogToken'
+Set-Alias -Name 'RelaxedIT.AzLog.InstalRequiredPackages' -Value 'Install-RelaxedITAzLogPackage'
+Set-Alias -Name 'RelaxedIT.AzLog.InstallRequiredPackages' -Value 'Install-RelaxedITAzLogPackage'
+
+Export-ModuleMember -Function 'Send-RelaxedITAzLogPing', 'Add-RelaxedITAzLogToken', 'Install-RelaxedITAzLogPackage', 'Import-RelaxedITAzLogAssembly' -Alias 'RelaxedIT.AzLog.Run.Ping', 'RelaxedIT.AzLog.AddToken', 'RelaxedIT.AzLog.InstalRequiredPackages', 'RelaxedIT.AzLog.InstallRequiredPackages'

@@ -3,7 +3,7 @@
 
 function Test-RelaxedIT.Update
 {
-    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.94"
+    Write-RelaxedIT -logtext "Test-RelaxedIT.Update v0.0.95"
 }
 
 function RelaxedIT.Update.All
@@ -202,6 +202,17 @@ function RelaxedIT.Update.Task
     catch
     {
         Write-RelaxedIT -logtext ("# RelaxedIT.Resources.Install(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
+        Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
+    }
+
+    try
+    {
+        Write-RelaxedIT -logtext "RelaxedIT.AzLogPackage"
+        Install-RelaxedITAzLogPackage
+    }
+    catch
+    {
+        Write-RelaxedIT -logtext ("# RelaxedIT.Install-RelaxedITAzLogPackage(" + ($MyInvocation.ScriptName.Split("\")[-1]) + ") """ + $MyInvocation.MyCommand.Name + """: " + $MyInvocation.PSCommandPath + ": " + $_.Exception.Message + $_.Exception.ItemName)  -ForegroundColor red
         Write-RelaxedIT -logtext ($_ | Format-List * -Force | Out-String) -ForegroundColor red
     }
 

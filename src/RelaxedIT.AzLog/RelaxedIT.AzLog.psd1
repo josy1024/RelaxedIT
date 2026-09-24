@@ -12,10 +12,10 @@
 RootModule = 'RelaxedIT.AzLog.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.93'
+ModuleVersion = '0.0.94'
 
 # Supported PSEditions
-# CompatiblePSEditions = @()
+CompatiblePSEditions = 'Core'
 
 # ID used to uniquely identify this module
 GUID = 'd6369c1d-c3a9-4218-a7b4-1625f309f4ad'
@@ -30,10 +30,10 @@ CompanyName = 'Unknown'
 Copyright = '(c) Josef Lahmer. All rights reserved.'
 
 # Description of the functionality provided by this module
-Description = 'relaxed IT AzLog'
+Description = 'RelaxedIT AzLog - Azure Data Tables Logging'
 
 # Minimum version of the PowerShell engine required by this module
-# PowerShellVersion = ''
+PowerShellVersion = '7.0'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
@@ -69,16 +69,19 @@ Description = 'relaxed IT AzLog'
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = 'RelaxedIT.AzLog.Run.Ping', 'RelaxedIT.AzLog.AddToken'
+FunctionsToExport = 'Import-RelaxedITAzLogAssembly', 'Send-RelaxedITAzLogPing', 
+               'Install-RelaxedITAzLogPackage', 'Add-RelaxedITAzLogToken'
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = '*'
+CmdletsToExport = @()
 
 # Variables to export from this module
-VariablesToExport = '*'
+# VariablesToExport = @()
 
 # Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-AliasesToExport = '*'
+AliasesToExport = 'RelaxedIT.AzLog.Run.Ping', 'RelaxedIT.AzLog.AddToken', 
+               'RelaxedIT.AzLog.InstalRequiredPackages', 
+               'RelaxedIT.AzLog.InstallRequiredPackages'
 
 # DSC resources to export from this module
 # DscResourcesToExport = @()

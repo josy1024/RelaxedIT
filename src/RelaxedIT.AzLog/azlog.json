@@ -1,5 +1,6 @@
 {
-    "sasToken": "#insert sas token here",
     "storageAccountName": "endpointlogger",
-    "tableName": "table01"
+    "tableName": "table01",
+    "sasToken": "#insert sas token here",
+    "accountKey": "#optional: insert storage account key here"
 }
